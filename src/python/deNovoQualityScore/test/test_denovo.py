@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Strelka - Small Variant Caller
 # Copyright (c) 2009-2018 Illumina, Inc.
@@ -21,20 +21,21 @@
 import gzip
 import itertools
 import os
+import re
 import subprocess as sp
 import sys
+import warnings
 
 import cyvcf2
 import numpy as np
 import pytest
-import vcf
 
 from numpy.testing import assert_allclose
 
 import denovo
 
 
-python_exec = 'python'
+python_exec = sys.executable
 denovo_script = './denovo.py'
 
 dev_null = open(os.devnull, 'wb')
@@ -101,7 +102,7 @@ def datasets():
         'par_bed': 'PARv5.bed'
     }
 
-    paths = {name: get_test_data_path(path) for name, path in files.iteritems()}
+    paths = {name: get_test_data_path(path) for name, path in files.items()}
 
     return paths
 
@@ -145,15 +146,117 @@ manta_truth_set = [
 
 # commonly used functions
 
+#
+# VCF access helpers (cyvcf2):
+# the test suite previously relied on PyVCF (python2-only). The helpers below
+# provide the small subset of that API used here on top of cyvcf2, which is
+# already a runtime dependency of denovo.py.
+#
+def get_denovo_program(vcf_reader):
+    """value of the ##denovo_program header line (or None)"""
+    for line in vcf_reader.raw_header.splitlines():
+        if line.startswith('##denovo_program='):
+            return line.split('=', 1)[1]
+    return None
+
+
+def get_formats(vcf_reader):
+    """set of FORMAT field names declared in the VCF header"""
+    fields = set()
+    for line in vcf_reader.raw_header.splitlines():
+        if line.startswith('##FORMAT='):
+            for m in re.finditer(r'<ID=([A-Za-z0-9_]+)', line):
+                fields.add(m.group(1))
+    return fields
+
+
+def is_snp(variant):
+    """single nucleotide variant (PyVCF 'is_snp' semantics, simplified)"""
+    return len(variant.REF) == 1 and all(len(alt) == 1 for alt in variant.ALT)
+
+
+def is_indel(variant):
+    """insertion/deletion (PyVCF 'is_indel' semantics, simplified)"""
+    if 'SVTYPE' in variant.INFO:
+        return False
+    return len(variant.REF) > 1 or any(len(alt) != len(variant.REF) for alt in variant.ALT)
+
+
+def is_sv(variant):
+    """structural variant (PyVCF 'is_sv': SVTYPE INFO field present)"""
+    return variant.INFO.get('SVTYPE') is not None
+
+
+def var_type(variant):
+    """'snp' / 'indel' / 'sv' / 'unknown' (PyVCF 'var_type' semantics)"""
+    if is_snp(variant):
+        return 'snp'
+    elif is_indel(variant):
+        return 'indel'
+    elif is_sv(variant):
+        return 'sv'
+    else:
+        return 'unknown'
+
+
+def approx(a, b, rel_tol=1e-4, abs_tol=1e-6):
+    """numeric equality tolerant to cyvcf2's float32 storage of FORMAT
+    fields (PyVCF reported float64 values)"""
+    fa, fb = float(a), float(b)
+    return abs(fa - fb) <= max(rel_tol * max(abs(fa), abs(fb)), abs_tol)
+
+
+def info_eq(info1, info2):
+    """cyvcf2 INFO objects compare by identity: compare by content"""
+    if info1 is None or info2 is None:
+        return info1 is None and info2 is None
+    return dict(info1) == dict(info2)
+
+
+def variants_match(v1, v2):
+    """field-by-field comparison replacing PyVCF's variant equality"""
+    return all(getattr(v1, f) == getattr(v2, f)
+               for f in ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'FILTER')) \
+        and info_eq(v1.INFO, v2.INFO)
+
+
+def has_field(variant, field):
+    """True if the FORMAT field is present in the variant record"""
+    return field in variant.FORMAT
+
+
+def sample_field(variant, sample_idx, field):
+    """single-valued FORMAT field for a sample; None if absent or missing.
+
+    cyvcf2 reports missing values as NaN (numeric fields) or '.'
+    (string fields), and raises KeyError for a field not in FORMAT;
+    PyVCF reported them as None.
+    """
+    if not has_field(variant, field):
+        return None
+    value = variant.format(field)[sample_idx]
+    if isinstance(value, str):
+        # string field: value is a scalar (not a length-1 array)
+        return value if value != '.' else None
+    value = value[0]
+    if value != value:  # NaN -> missing
+        return None
+    if isinstance(value, (int, float, np.integer, np.floating)):
+        # cyvcf2 stores numeric FORMAT fields as float32: promote to
+        # python float for py2-compatible comparison semantics
+        return float(value)
+    return value
+
+
 def check_denovo_header(variant_reader):
 
     # test if output VCF contains the denovo program name and version
     reference_value = '{} {}'.format(denovo._name, denovo._version)
-    assert variant_reader.metadata["denovo_program"][0] == reference_value
+    assert get_denovo_program(variant_reader) == reference_value
 
-    assert denovo._field_name in variant_reader.formats
+    assert denovo._field_name in get_formats(variant_reader)
 
-    assert denovo._field_name in variant_reader.formats
+    assert denovo._field_name in get_formats(variant_reader)
 
 
 # cmd interface
@@ -204,13 +307,13 @@ def test_cmd_ids_full(datasets, tempdir):
     with open(vcf_out_path, 'w') as f:
         sp.check_call(cmd, stdout=f)
 
-    vr = vcf.VCFReader(filename=vcf_out_path)
+    vr = cyvcf2.VCF(vcf_out_path)
 
     check_denovo_header(vr)
 
     for variant in vr:
-        assert 'DQ' in variant.samples[0].data._fields
-        assert variant.samples[0]['DQ'] == 0.0
+        assert 'DQ' in variant.FORMAT
+        assert sample_field(variant, 0, 'DQ') == 0.0
 
 
 def test_cmd_vcf_output_options(datasets, tempdir):
@@ -225,7 +328,7 @@ def test_cmd_vcf_output_options(datasets, tempdir):
     vcf_out_path1 = tempdir.join('out1.vcf').strpath
     with open(vcf_out_path1, 'w') as f:
         sp.check_call(cmd1, stdout=f)
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
 
     check_denovo_header(vr1)
     assert len(list(vr1)) == 0
@@ -235,19 +338,21 @@ def test_cmd_vcf_output_options(datasets, tempdir):
     vcf_out_path2 = tempdir.join('out2.vcf').strpath
     with open(vcf_out_path2, 'w') as f:
         sp.check_call(cmd2, stdout=f)
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
-
-    assert not vr2.formats
-    assert not vr2.infos
-    assert not vr2.contigs
-    assert len(list(vr2)) > 0
+    # body-only output has no header, so it cannot be opened by cyvcf2:
+    # check the header lines directly.
+    with open(vcf_out_path2) as f:
+        body_lines = [line for line in f if line.strip()]
+        assert not any(line.startswith('##FORMAT=') for line in body_lines)
+        assert not any(line.startswith('##INFO=') for line in body_lines)
+        assert not any(line.startswith(('##contig=', '##sequence=')) for line in body_lines)
+        assert len([line for line in body_lines if not line.startswith('#')]) > 0
 
     # full VCF
     cmd3 = cmd + ['--vcf-output', 'full']
     vcf_out_path3 = tempdir.join('out3.vcf').strpath
     with open(vcf_out_path3, 'w') as f:
         sp.check_call(cmd3, stdout=f)
-    vr3 = vcf.VCFReader(filename=vcf_out_path3)
+    vr3 = cyvcf2.VCF(vcf_out_path3)
 
     check_denovo_header(vr3)
     assert len(list(vr3)) > 0
@@ -276,28 +381,27 @@ def test_cmd_ids_spw_ref(datasets, tempdir):
     with open(vcf_out_path2, 'w') as f:
         sp.check_call(cmd2, stdout=f)
 
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
+    vr2 = cyvcf2.VCF(vcf_out_path2)
 
     check_denovo_header(vr1)
     check_denovo_header(vr2)
 
     n_hit = 0
     n_called = {'indel': 0, 'snp': 0}
-    for variant, variant2 in itertools.izip(vr1, vr2):
-        assert variant == variant2
-        for sample in variant.samples:
-            assert 'DQ' in sample.data._fields
+    for variant, variant2 in zip(vr1, vr2):
+        assert variants_match(variant, variant2)
+        assert has_field(variant, 'DQ')
         v = (variant.CHROM, variant.POS, variant.REF, variant.ALT)
+        dq = sample_field(variant, 2, 'DQ')
         if v in strelka_truth_set:
-            assert variant.samples[2]['DQ'] >= 20.0
+            assert dq >= 20.0
             n_hit += 1
-        if variant.samples[2]['DQ'] >= 15.0:
-            n_called[variant.var_type] += 1
+        if dq is not None and dq >= 15.0:
+            n_called[var_type(variant)] += 1
         # check number of decimals
-        dq = variant.samples[2]['DQ']
         if dq is not None:
-            assert dq == round(dq, denovo._default_dq_decimals)
+            assert approx(dq, round(dq, denovo._default_dq_decimals))
             assert dq <= denovo._max_score
 
     assert n_called['snp'] >= 4
@@ -332,28 +436,27 @@ def test_cmd_parallel_spw_ref(datasets, tempdir):
 
     vcf_out_path2 = vcf_out_path1
 
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
+    vr2 = cyvcf2.VCF(vcf_out_path2)
 
     check_denovo_header(vr1)
     check_denovo_header(vr2)
 
     n_hit = 0
     n_called = {'indel': 0, 'snp': 0}
-    for variant, variant2 in itertools.izip(vr1, vr2):
-        assert variant == variant2
-        for sample in variant.samples:
-            assert 'DQ' in sample.data._fields
+    for variant, variant2 in zip(vr1, vr2):
+        assert variants_match(variant, variant2)
+        assert has_field(variant, 'DQ')
         v = (variant.CHROM, variant.POS, variant.REF, variant.ALT)
+        dq = sample_field(variant, 2, 'DQ')
         if v in strelka_truth_set:
-            assert variant.samples[2]['DQ'] >= 20.0
+            assert dq >= 20.0
             n_hit += 1
-        if variant.samples[2]['DQ'] >= 15.0:
-            n_called[variant.var_type] += 1
+        if dq is not None and dq >= 15.0:
+            n_called[var_type(variant)] += 1
         # check number of decimals
-        dq = variant.samples[2]['DQ']
         if dq is not None:
-            assert dq == round(dq, denovo._default_dq_decimals)
+            assert approx(dq, round(dq, denovo._default_dq_decimals))
             assert dq <= denovo._max_score
 
     assert n_called['snp'] >= 4
@@ -387,19 +490,19 @@ def test_cmd_single_parallel_spw_comparison(datasets, tempdir):
     sp.check_call(cmd2)
 
     # check that both calls yield the same results
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
+    vr2 = cyvcf2.VCF(vcf_out_path2)
 
     # same headers
     check_denovo_header(vr1)
     check_denovo_header(vr2)
 
     # explicitly check that the denovo header lines are the same
-    assert vr1.metadata['denovo_program'][0] == vr2.metadata['denovo_program'][0]
-    assert vr1.formats['DQ'] == vr1.formats['DQ']
+    assert get_denovo_program(vr1) == get_denovo_program(vr2)
+    assert 'DQ' in get_formats(vr1)
 
-    for variant, variant2 in itertools.izip(vr1, vr2):
-        assert variant == variant2
+    for variant, variant2 in zip(vr1, vr2):
+        assert variants_match(variant, variant2)
 
 
 def test_cmd_ids_spw_sv_ref(datasets, tempdir):
@@ -412,16 +515,16 @@ def test_cmd_ids_spw_sv_ref(datasets, tempdir):
     with open(vcf_out_path1, 'w') as f:
         sp.check_call(cmd1, stdout=f)
 
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
 
     check_denovo_header(vr1)
 
     n_hit = 0
     for variant in vr1:
-        assert variant.is_sv
+        assert is_sv(variant)
         v = (variant.CHROM, variant.POS, variant.INFO['SVTYPE'])
         if v in manta_truth_set:
-            assert variant.samples[0]['DQ'] >= 0.0
+            assert sample_field(variant, 0, 'DQ') >= 0.0
             n_hit += 1
 
     # check if all truth set variants were called: full recall
@@ -438,14 +541,14 @@ def test_cmd_allosomes_male_proband_spw(datasets, tempdir):
     with open(vcf_out_path1, 'w') as f:
         sp.check_call(cmd1, stdout=f)
 
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
 
     check_denovo_header(vr1)
 
     n_denovo = n_no_denovo = n_no_dq = 0
     for variant in vr1:
         # compare against simulation tags
-        has_dq_field = 'DQ' in variant.samples[0].data._fields
+        has_dq_field = 'DQ' in variant.FORMAT
         if not has_dq_field:
             # failing filter in mother or proband
             assert variant.ID == 'noDQ'
@@ -453,10 +556,10 @@ def test_cmd_allosomes_male_proband_spw(datasets, tempdir):
         else:
             # all other have a DQ score
             if variant.ID == 'denovo':
-                assert variant.samples[0]['DQ'] >= 7.0
+                assert sample_field(variant, 0, 'DQ') >= 7.0
                 n_denovo += 1
             elif variant.ID == 'noDenovo':
-                assert variant.samples[0]['DQ'] == 0.0
+                assert sample_field(variant, 0, 'DQ') == 0.0
                 n_no_denovo += 1
             elif variant.ID == 'noDQ':
                 n_no_dq += 1
@@ -464,7 +567,7 @@ def test_cmd_allosomes_male_proband_spw(datasets, tempdir):
                 raise ValueError("No valid annotation for variant")
             # parents always have a missing DQ score
             for i in [1, 2]:
-                assert variant.samples[i]['DQ'] is None
+                assert sample_field(variant, i, 'DQ') is None
 
     assert n_no_dq == 17
     assert n_no_denovo == 7
@@ -487,17 +590,17 @@ def test_cmd_pedphase_filter_spw(datasets, tempdir):
     with open(vcf_out_path2, 'w') as f:
         sp.check_call(cmd2, stdout=f)
 
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
+    vr2 = cyvcf2.VCF(vcf_out_path2)
 
     check_denovo_header(vr1)
     check_denovo_header(vr2)
 
     n_denovo = n_no_denovo = n_no_dq = 0
-    for variant, variant2 in itertools.izip(vr1, vr2):
-        assert variant == variant2
+    for variant, variant2 in zip(vr1, vr2):
+        assert variants_match(variant, variant2)
         # compare against simulation tags
-        has_dq_field = 'DQ' in variant.samples[0].data._fields
+        has_dq_field = 'DQ' in variant.FORMAT
         if not has_dq_field:
             # failing filter in mother or proband
             assert variant.ID == 'noDQ'
@@ -505,10 +608,10 @@ def test_cmd_pedphase_filter_spw(datasets, tempdir):
         else:
             # all other have a DQ score
             if variant.ID == 'denovo':
-                assert variant.samples[0]['DQ'] >= 0.0
+                assert sample_field(variant, 0, 'DQ') >= 0.0
                 n_denovo += 1
             elif variant.ID == 'noDenovo':
-                assert variant.samples[0]['DQ'] == 0.0
+                assert sample_field(variant, 0, 'DQ') == 0.0
                 n_no_denovo += 1
             elif variant.ID == 'noDQ':
                 raise ValueError("Variant should not have a DQ score")
@@ -516,7 +619,7 @@ def test_cmd_pedphase_filter_spw(datasets, tempdir):
                 raise ValueError("No valid annotation for variant")
             # parents always have a missing DQ score
             for i in [1, 2]:
-                assert variant.samples[i]['DQ'] is None
+                assert sample_field(variant, i, 'DQ') is None
 
     assert n_no_dq == 0
     assert n_no_denovo == 7
@@ -531,45 +634,50 @@ def test_cmd_proband_sibling_five_samples(datasets, tempdir):
     vcf_proband_path = tempdir.join('proband.vcf').strpath
     vcf_sibling_path = tempdir.join('sibling.vcf').strpath
 
-    cmd_proband = ['python', './denovo.py',
+    cmd_proband = [python_exec, denovo_script,
                    '--proband', 'Child', '--mother', 'Mother', '--father', 'Father',
                    datasets['vcf_spw_5samples']]
 
-    cmd_sibling = ['python', './denovo.py',
+    cmd_sibling = [python_exec, denovo_script,
                    '--proband', 'Mother2', '--mother', 'Mother', '--father', 'Father',
                    vcf_proband_path]
 
     with open(vcf_proband_path, 'w') as f:
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
             sp.check_call(cmd_proband, stdout=f)
         assert len(record) == 0  # no warning raised
 
     with open(vcf_sibling_path, 'w') as f:
-        with pytest.warns(None) as record:
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
             sp.check_call(cmd_sibling, stdout=f)
         assert len(record) == 0  # no warning raised
 
-    vf1 = vcf.VCFReader(filename=vcf_proband_path)
-    vf2 = vcf.VCFReader(filename=vcf_sibling_path)
+    vf1 = cyvcf2.VCF(vcf_proband_path)
+    vf2 = cyvcf2.VCF(vcf_sibling_path)
 
     check_denovo_header(vf1)
     check_denovo_header(vf2)
 
-    get_dq = lambda variant, sample: variant.samples[sample]['DQ']
+    get_dq = lambda variant, sample: sample_field(variant, sample, 'DQ')
 
-    has_dq = lambda variant, sample: 'DQ' in variant.samples[sample].data._fields
+    has_dq = lambda variant, sample: has_field(variant, 'DQ')
 
+    # cyvcf2 reports an empty filter set (PASS or '.') as None,
+    # mirroring denovo's own can_compute check (FILTER is not None)
     pass_filter = lambda variant, samples: \
-                  all([variant.samples[i]['FT']=='PASS' for i in samples]) and \
-                  variant.FILTER == []
+                  all([sample_field(variant, i, 'FT')=='PASS' for i in samples]) and \
+                  variant.FILTER is None
 
     sample_indices = lambda vcf, samples: \
                           [vcf.samples.index(sample) for sample in samples]
 
-    for variant1, variant2 in itertools.izip(vf1, vf2):
+    for variant1, variant2 in zip(vf1, vf2):
         # compare common most fields are the same
-        for field in ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'FILTER', 'INFO', 'FORMAT'):
+        for field in ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'FILTER', 'FORMAT'):
             assert variant1.__getattribute__(field) == variant2.__getattribute__(field)
+        assert info_eq(variant1.INFO, variant2.INFO)
         # compare against simulation tags
 
         # "proband"
@@ -656,43 +764,163 @@ def test_python_full(datasets, tempdir):
     denovo.denovo(datasets['vcf_in'], pedigree, param, vcf_out_path)
 
     # test if output VCF has the DQ field set
-    vr = vcf.VCFReader(filename=vcf_out_path)
+    vr = cyvcf2.VCF(vcf_out_path)
 
     check_denovo_header(vr)
 
     n_var1 = 0
     n_dq1 = 0
     for variant in vr:
-        assert 'DQ' in variant.samples[0].data._fields
-        if variant.samples[0]['DQ'] is not None:
-            assert variant.samples[0]['DQ'] >= 0.0
-            assert variant.samples[0]['DQ'] <= denovo._max_score
+        assert 'DQ' in variant.FORMAT
+        if sample_field(variant, 0, 'DQ') is not None:
+            assert sample_field(variant, 0, 'DQ') >= 0.0
+            assert sample_field(variant, 0, 'DQ') <= denovo._max_score
             n_dq1 += 1
-        assert variant.samples[1]['DQ'] is None
-        assert variant.samples[2]['DQ'] is None
+        assert sample_field(variant, 1, 'DQ') is None
+        assert sample_field(variant, 2, 'DQ') is None
         n_var1 += 1
 
     # test that overwriting the DQ field does not raise a warning
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
         denovo.denovo(vcf_out_path, pedigree, param, vcf_out_path2)
     assert len(record) == 0
 
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
+    vr2 = cyvcf2.VCF(vcf_out_path2)
 
     n_var2 = 0
     n_dq2 = 0
     for variant in vr2:
-        assert 'DQ' in variant.samples[0].data._fields
-        if variant.samples[0]['DQ'] is not None:
-            assert variant.samples[0]['DQ'] >= 0.0
-            assert variant.samples[0]['DQ'] <= denovo._max_score
+        assert 'DQ' in variant.FORMAT
+        if sample_field(variant, 0, 'DQ') is not None:
+            assert sample_field(variant, 0, 'DQ') >= 0.0
+            assert sample_field(variant, 0, 'DQ') <= denovo._max_score
             n_dq2 += 1
-        assert variant.samples[1]['DQ'] is None
-        assert variant.samples[2]['DQ'] is None
+        assert sample_field(variant, 1, 'DQ') is None
+        assert sample_field(variant, 2, 'DQ') is None
         n_var2 += 1
 
     assert n_var1 == n_var2
     assert n_dq1 == n_dq2
+
+
+def test_python_dummy_model(datasets, tempdir):
+    """Test the dummy scoring model via the python interface"""
+
+    vcf_out_path = tempdir.join('out1.vcf').strpath
+    param = {
+        'model': 'dummy',
+        'pass_sample_filters': True,
+        'min_read_depth': 1,
+        'select_method': 'call'
+    }
+    pedigree = {
+        'proband': 'PROBAND',
+        'mother': 'PARENT1',
+        'father': 'PARENT2'
+    }
+
+    denovo.denovo(datasets['vcf_in'], pedigree, param, vcf_out_path)
+
+    vr = cyvcf2.VCF(vcf_out_path)
+
+    check_denovo_header(vr)
+
+    n_var = 0
+    for variant in vr:
+        assert 'DQ' in variant.FORMAT
+        # dummy model: proband only, constant zero score
+        assert sample_field(variant, 0, 'DQ') == 0.0
+        assert sample_field(variant, 1, 'DQ') is None
+        assert sample_field(variant, 2, 'DQ') is None
+        n_var += 1
+
+    assert n_var > 0
+
+
+def test_python_allosomes_male_proband(datasets, tempdir):
+    """Test the python interface for X/Y variants with a male (XY) proband"""
+
+    vcf_out_path = tempdir.join('out1.vcf').strpath
+    # the python interface does not merge partial param dicts with the
+    # defaults: pass min_gqx explicitly (cli default)
+    param = {
+        'model': 'dng',
+        'pass_sample_filters': True,
+        'min_read_depth': 1,
+        'select_method': 'call',
+        'min_gqx': denovo._min_gqx
+    }
+    pedigree = {
+        'proband': 'NA12882',
+        'mother': 'NA12878',
+        'father': 'NA12877'
+    }
+
+    denovo.denovo(datasets['vcf_spw_chrXY'], pedigree, param, vcf_out_path)
+
+    vr = cyvcf2.VCF(vcf_out_path)
+
+    check_denovo_header(vr)
+
+    n_var = 0
+    n_allosomal = 0
+    for variant in vr:
+        assert 'DQ' in variant.FORMAT
+        if variant.CHROM in ('chrX', 'chrY'):
+            n_allosomal += 1
+            dq = sample_field(variant, 0, 'DQ')
+            if dq is not None:
+                assert 0.0 <= dq <= denovo._max_score
+        assert sample_field(variant, 1, 'DQ') is None
+        assert sample_field(variant, 2, 'DQ') is None
+        n_var += 1
+
+    assert n_var > 0
+    assert n_allosomal > 0
+
+
+def test_python_sv(datasets, tempdir):
+    """Test the python interface for structural variants"""
+
+    vcf_out_path = tempdir.join('out1.vcf').strpath
+    param = {
+        'model': 'dng',
+        'pass_sample_filters': True,
+        'min_read_depth': 1,
+        'select_method': 'call'
+    }
+    pedigree = {
+        'proband': 'NA12882',
+        'mother': 'NA12878',
+        'father': 'NA12877'
+    }
+
+    denovo.denovo(datasets['vcf_spw_sv_chr22'], pedigree, param, vcf_out_path)
+
+    vr = cyvcf2.VCF(vcf_out_path)
+
+    check_denovo_header(vr)
+
+    # the input header declares DQ as Integer: the output must re-declare it
+    # as Float (DQ scores are written with decimals)
+    for line in vr.raw_header.splitlines():
+        if line.startswith('##FORMAT=') and '<ID=DQ,' in line:
+            assert 'Type=Float' in line
+
+    n_var = 0
+    n_sv = 0
+    for variant in vr:
+        assert 'DQ' in variant.FORMAT
+        if is_sv(variant):
+            n_sv += 1
+            dq = sample_field(variant, 0, 'DQ')
+            if dq is not None:
+                assert 0.0 <= dq <= denovo._max_score
+        n_var += 1
+
+    assert n_var > 0
+    assert n_sv > 0
 
 
 def test_python_sample_missing(datasets):
@@ -752,11 +980,11 @@ def test_python_best_dng_reference(datasets, tempdir):
 
     # unphased
     denovo.denovo(datasets['vcf_in'], pedigree, param, vcf_out_path1)
-    vr1 = vcf.VCFReader(filename=vcf_out_path1)
+    vr1 = cyvcf2.VCF(vcf_out_path1)
 
     # phased
     denovo.denovo(datasets['vcf_in_phased'], pedigree, param, vcf_out_path2)
-    vr2 = vcf.VCFReader(filename=vcf_out_path2)
+    vr2 = cyvcf2.VCF(vcf_out_path2)
 
     # reference
     ref = gzip.open(datasets['dng_ref'])
@@ -765,16 +993,16 @@ def test_python_best_dng_reference(datasets, tempdir):
     check_denovo_header(vr2)
 
     for v1, v2, r in zip(vr1, vr2, ref):
-        rf = r.split(' ')
+        rf = r.split(b' ')
         # same position
         assert v1.POS == int(rf[6])
         assert v2.POS == int(rf[6])
         # compare denovo scores with reference values
         dng = round(denovo.prob2score(1.0 - float(rf[24])), 1)
-        if 'DQ' in v1.samples[0].data._fields and v1.samples[0]['DQ'] is not None:
-            assert v1.samples[0]['DQ'] == dng
-        if 'DQ' in v2.samples[0].data._fields and v2.samples[0]['DQ'] is not None:
-            assert v2.samples[0]['DQ'] == dng
+        if 'DQ' in v1.FORMAT and sample_field(v1, 0, 'DQ') is not None:
+            assert approx(sample_field(v1, 0, 'DQ'), dng)
+        if 'DQ' in v2.FORMAT and sample_field(v2, 0, 'DQ') is not None:
+            assert approx(sample_field(v2, 0, 'DQ'), dng)
 
 
 def test_python_call_dng_reference(datasets, tempdir):
@@ -798,19 +1026,22 @@ def test_python_call_dng_reference(datasets, tempdir):
 
     # test if output VCF has the DQ field set
     ref = gzip.open(datasets['dng_ref'])
-    vr = vcf.VCFReader(filename=vcf_out_path)
+    vr = cyvcf2.VCF(vcf_out_path)
 
     check_denovo_header(vr)
 
     n_hits = 0
     for variant, r in zip(vr, ref):
-        rf = r.split(' ')
+        rf = r.split(b' ')
         # same position
         assert variant.POS == int(rf[6])
         # compare denovo scores with reference values
         dng = round(denovo.prob2score(1.0 - float(rf[24])), 1)
-        if 'DQ' in variant.samples[0].data._fields:
-            assert variant.samples[0]['DQ'] <= dng
+        if 'DQ' in variant.FORMAT:
+            dq = sample_field(variant, 0, 'DQ')
+            # py2 semantics: a missing (None) score is trivially <= dng
+            if dq is not None:
+                assert dq <= float(dng) + approx(0.0, 1.0)
             n_hits += 1
 
     assert n_hits > 0
@@ -830,7 +1061,7 @@ def test_python_spw_ref(datasets, tempdir):
 
     denovo.denovo(datasets['vcf_spw'], pedigree, param, vcf_out_path)
 
-    vr = vcf.VCFReader(filename=vcf_out_path)
+    vr = cyvcf2.VCF(vcf_out_path)
     child_idx = vr.samples.index(pedigree['proband'])
 
     check_denovo_header(vr)
@@ -839,21 +1070,22 @@ def test_python_spw_ref(datasets, tempdir):
     n_called = {'indel': 0, 'snp': 0}
     for variant in vr:
         v = (variant.CHROM, variant.POS, variant.REF, variant.ALT)
-        if 'DQ' in variant.samples[child_idx].data._fields:
-            if variant.samples[child_idx]['DQ'] >= 15.0:
-                n_called[variant.var_type] += 1
-            for (sample_index, sample) in enumerate(variant.samples):
+        if 'DQ' in variant.FORMAT:
+            dq = sample_field(variant, child_idx, 'DQ')
+            if dq is not None and dq >= 15.0:
+                n_called[var_type(variant)] += 1
+            for sample_index in range(len(variant.genotypes)):
                 if sample_index != child_idx:
-                    assert sample['DQ'] is None
+                    assert sample_field(variant, sample_index, 'DQ') is None
                 else:
-                    assert sample['DQ'] is None or sample['DQ'] >= 0.0
+                    assert sample_field(variant, sample_index, 'DQ') is None or sample_field(variant, sample_index, 'DQ') >= 0.0
             # check number of decimals
-            dq = variant.samples[child_idx]['DQ']
+            dq = sample_field(variant, child_idx, 'DQ')
             if dq is not None:
-                assert dq == round(dq, denovo._default_dq_decimals)
+                assert approx(dq, round(dq, denovo._default_dq_decimals))
                 assert dq <= denovo._max_score
         if v in strelka_truth_set:
-            assert variant.samples[child_idx]['DQ'] >= 20.0
+            assert sample_field(variant, child_idx, 'DQ') >= 20.0
             n_hit += 1
 
     assert n_called['snp'] >= 4
@@ -877,7 +1109,7 @@ def test_python_spw_decimals_ref(datasets, tempdir):
 
     denovo.denovo(datasets['vcf_spw'], pedigree, param, vcf_out_path)
 
-    vr = vcf.VCFReader(filename=vcf_out_path)
+    vr = cyvcf2.VCF(vcf_out_path)
     child_idx = vr.samples.index(pedigree['proband'])
 
     check_denovo_header(vr)
@@ -885,24 +1117,24 @@ def test_python_spw_decimals_ref(datasets, tempdir):
     n_hit = 0
     n_called = {'indel': 0, 'snp': 0}
     for variant in vr:
-        for sample in variant.samples:
-            assert 'DQ' in sample.data._fields
+        assert has_field(variant, 'DQ')
         v = (variant.CHROM, variant.POS, variant.REF, variant.ALT)
-        if 'DQ' in variant.samples[child_idx].data._fields:
-            if variant.samples[child_idx]['DQ'] >= 15.0:
-                n_called[variant.var_type] += 1
-            for (sample_index, sample) in enumerate(variant.samples):
+        if 'DQ' in variant.FORMAT:
+            dq = sample_field(variant, child_idx, 'DQ')
+            if dq is not None and dq >= 15.0:
+                n_called[var_type(variant)] += 1
+            for sample_index in range(len(variant.genotypes)):
                 if sample_index != child_idx:
-                    assert sample['DQ'] is None
+                    assert sample_field(variant, sample_index, 'DQ') is None
                 else:
-                    sample['DQ'] is None or sample['DQ'] >= 0.0
+                    sample_field(variant, sample_index, 'DQ') is None or sample_field(variant, sample_index, 'DQ') >= 0.0
             # check number of decimals
-            dq = variant.samples[child_idx]['DQ']
+            dq = sample_field(variant, child_idx, 'DQ')
             if dq is not None:
-                assert dq == round(dq, decimals)
+                assert approx(dq, round(dq, decimals))
                 assert dq <= denovo._max_score
         if v in strelka_truth_set:
-            assert variant.samples[child_idx]['DQ'] >= 20.0
+            assert sample_field(variant, child_idx, 'DQ') >= 20.0
             n_hit += 1
 
     assert n_called['snp'] >= 4
@@ -923,7 +1155,7 @@ def test_python_spw_ref_five_samples(datasets, tempdir):
 
     denovo.denovo(datasets['vcf_spw_5samples'], pedigree, param, vcf_out_path)
 
-    vr = vcf.VCFReader(filename=vcf_out_path)
+    vr = cyvcf2.VCF(vcf_out_path)
     child_idx = vr.samples.index(pedigree['proband'])
 
     check_denovo_header(vr)
@@ -933,15 +1165,14 @@ def test_python_spw_ref_five_samples(datasets, tempdir):
     for variant in vr:
         v = (variant.CHROM, variant.POS, variant.REF, variant.ALT)
         if v in strelka_truth_set:
-            assert variant.samples[child_idx]['DQ'] >= 20.0
+            assert sample_field(variant, child_idx, 'DQ') >= 20.0
             n_hit += 1
-        if 'DQ' in variant.samples[child_idx].data._fields:
-            for sample_index in xrange(len(variant.samples)):
-                sample = variant.samples[sample_index]
+        if 'DQ' in variant.FORMAT:
+            for sample_index in range(len(variant.genotypes)):
                 if sample_index != child_idx:
-                    assert sample['DQ'] is None
-                elif sample['DQ'] >= 15.0:
-                    n_called[variant.var_type] += 1
+                    assert sample_field(variant, sample_index, 'DQ') is None
+                elif (dq := sample_field(variant, sample_index, 'DQ')) is not None and dq >= 15.0:
+                    n_called[var_type(variant)] += 1
 
     assert n_called['snp'] >= 4
     assert n_called['indel'] >= 2
@@ -961,25 +1192,25 @@ def test_python_spw_old_prior_cases(datasets, tempdir):
 
     denovo.denovo(datasets['vcf_spw1005'], pedigree, param, vcf_out_path)
 
-    vr = vcf.VCFReader(filename=vcf_out_path)
-    assert 'DQ' in vr.formats
+    vr = cyvcf2.VCF(vcf_out_path)
+    assert 'DQ' in get_formats(vr)
 
     n_denovo = n_no_denovo = n_no_dq = 0
     for variant in vr:
         # compare against simulation tags
-        assert 'DQ' in variant.samples[0].data._fields
+        assert 'DQ' in variant.FORMAT
         # all other have a DQ score
         if variant.ID == 'denovo':
-            assert variant.samples[0]['DQ'] >= 7.0
+            assert sample_field(variant, 0, 'DQ') >= 7.0
             n_denovo += 1
         elif variant.ID == 'noDenovo':
-            assert variant.samples[0]['DQ'] < 2.0
+            assert sample_field(variant, 0, 'DQ') < 2.0
             n_no_denovo += 1
         else:
             raise ValueError("No valid annotation for variant")
         # parents always have a missing DQ score
         for i in [1, 2]:
-            assert variant.samples[i]['DQ'] is None
+            assert sample_field(variant, i, 'DQ') is None
 
     assert n_no_dq == 0
     assert n_no_denovo == 4
@@ -991,7 +1222,7 @@ def test_python_spw_old_prior_cases(datasets, tempdir):
 def test_snv_prior_import_order():
     """Test SNV prior import and reordering"""
 
-    for prior_type, prior_path in denovo._prior_paths.iteritems():
+    for prior_type, prior_path in denovo._prior_paths.items():
 
         prior_path = prior_path['snv']
         assert os.path.exists(prior_path)
@@ -1021,7 +1252,7 @@ def test_indel_length_prior_computation():
     assert len(mut_rate) == max_len+1
     assert np.all(np.diff(mut_rate) < 0.0)  # decaying values
 
-    for prior_type, prior_path in denovo._prior_paths.iteritems():
+    for prior_type, prior_path in denovo._prior_paths.items():
 
         prior_path = prior_path['indel']
         assert os.path.exists(prior_path)
@@ -1291,11 +1522,11 @@ def test_cyvcf2_variant_examples(datasets):
         assert v.POS == r[1]
         assert v.REF == r[2]
         assert v.ALT == r[3]
-        assert v.var_type == r[4]
-        if r[4] is 'snp':
-            assert v.is_snp
-        elif r[4] is 'indel':
-            assert v.is_indel
+        assert var_type(v) == r[4]
+        if r[4] == 'snp':
+            assert is_snp(v)
+        elif r[4] == 'indel':
+            assert is_indel(v)
 
 
 def test_cyvcf2_exceptions(datasets):
@@ -1328,7 +1559,7 @@ def test_indel_length(datasets):
         assert v.POS == r[1]
         assert v.REF == r[2]
         assert v.ALT == r[3]
-        assert v.var_type == r[4]
+        assert var_type(v) == r[4]
         assert denovo.indel_length(v) == r[5]
 
 
@@ -1441,7 +1672,7 @@ def test_import_par_bed(datasets):
     par = denovo.import_bed_regions(par_path)
 
     # check properties of data structure
-    for contig, coords in par.iteritems():
+    for contig, coords in par.items():
         assert contig == 'X'
         assert isinstance(coords, tuple)
         for pos in coords:

@@ -41,7 +41,7 @@ def argToBool(x) :
     class FalseStrings :
         val = ("", "0", "false", "f", "no", "n", "off")
 
-    if isinstance(x, basestring) :
+    if isinstance(x, str) :
         return (x.lower() not in FalseStrings.val)
     return bool(x)
 
@@ -64,7 +64,8 @@ def pickleConfigSections(pickleConfigFile, configSections) :
     """
     import pickle
 
-    pickle.dump(configSections, open(pickleConfigFile, "w"))
+    with open(pickleConfigFile, "wb") as configPickle:
+        pickle.dump(configSections, configPickle)
 
 
 
@@ -77,7 +78,8 @@ def getConfigSections(pickleConfigFile) :
 
     if not os.path.isfile(pickleConfigFile) : return {}
 
-    return pickle.load(open(pickleConfigFile))
+    with open(pickleConfigFile, "rb") as configPickle:
+        return pickle.load(configPickle)
 
 
 
@@ -112,9 +114,9 @@ def dumpIniSections(iniFile,iniSections) :
     """
     convert iniSections object, expected to be a hash or hashes, into an iniFile
     """
-    from ConfigParser import SafeConfigParser
+    import configparser
 
-    config = SafeConfigParser()
+    config = configparser.ConfigParser()
     config.optionxform=str
 
     def clean_value(v) :
@@ -136,18 +138,18 @@ def getIniSections(iniFile) :
     """
     parse the ini iniFile and return a hash of hashes
     """
-    from ConfigParser import SafeConfigParser
+    import configparser
 
     if not os.path.isfile(iniFile) : return {}
 
-    config = SafeConfigParser()
+    config = configparser.ConfigParser()
     config.optionxform=str
     config.read(iniFile)
 
     iniSections = {}
     for section in config.sections() :
         iniSections[section] = {}
-        for (k,v) in config.items(section) :
+        for (k,v) in config.items(section).items() :
             if v == "" : v = None
             iniSections[section][k] = v
 

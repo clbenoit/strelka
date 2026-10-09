@@ -60,7 +60,7 @@ def makeRunScript(scriptFile, workflowModulePath, workflowClassName, primaryConf
     sfp=open(scriptFile,"w")
 
     if pythonBin is None :
-        pythonBin="/usr/bin/env python2"
+        pythonBin="/usr/bin/env python3"
 
     sfp.write(runScript1 % (pythonBin, " ".join(sys.argv),workflowModuleDir,workflowModuleName,workflowClassName))
 
@@ -73,7 +73,7 @@ def makeRunScript(scriptFile, workflowModulePath, workflowClassName, primaryConf
     sfp.write('main(r"%s","%s",%s)\n' % (pickleConfigFile, primaryConfigSection, workflowClassName))
     sfp.write('\n')
     sfp.close()
-    os.chmod(scriptFile,0755)
+    os.chmod(scriptFile,0o755)
 
 
 
@@ -83,13 +83,9 @@ runScript1="""#!%s
 
 import os, sys
 
-if sys.version_info >= (3,0):
+if sys.version_info < (3,8):
     import platform
-    raise Exception("Strelka does not currently support python3 (version %%s detected)" %% (platform.python_version()))
-
-if sys.version_info < (2,6):
-    import platform
-    raise Exception("Strelka requires python2 version 2.6+ (version %%s detected)" %% (platform.python_version()))
+    raise Exception("Strelka requires python 3.8+ (version %%s detected)" %% (platform.python_version()))
 
 scriptDir=os.path.abspath(os.path.dirname(__file__))
 sys.path.append(r'%s')

@@ -50,13 +50,13 @@ be found in the [developer guide][developerGuide].
 A C++11 compiler is required. These are the current minimum compiler versions enforced
 by the build system:
 
-* python 2.6+
+* python 3.8+
 * gcc 4.8+ OR clang 3.2+ (OR Visual Studio 2013+, see windows note below)
 * libz (including headers)
 
 ### Runtime prerequisites
 
-* python 2.6+
+* python 3.8+
 
 ### Operating System Guidelines
 
@@ -83,12 +83,12 @@ possible for Visual Studio users. See the [developer guide][DeveloperGuide] for 
 ##### Ubuntu 14.04 and 16.04
 
     apt-get update -qq
-    apt-get install -qq bzip2 gcc g++ make python zlib1g-dev
+    apt-get install -qq bzip2 gcc g++ make python3 zlib1g-dev
 
 ##### Ubuntu 12.04
 
     apt-get update -qq
-    apt-get install -qq bzip2 gcc g++ make python python-software-properties zlib1g-dev
+    apt-get install -qq bzip2 gcc g++ make python3 python-software-properties zlib1g-dev
     # add gcc 4.8 from ubuntu ppa:
     add-apt-repository -y ppa:ubuntu-toolchain-r/test
     apt-get update -qq

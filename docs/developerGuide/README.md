@@ -191,7 +191,7 @@ see the `builderImage` variable.
 
 ## Coding Guidelines
 
-Supported project languages are C++11 for core methods development and python2 (2.6+) for workflow and scripting support.
+Supported project languages are C++11 for core methods development and python 3 (3.8+) for workflow and scripting support.
 
 ### Source formatting
 
