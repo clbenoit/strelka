@@ -149,7 +149,7 @@ def getIniSections(iniFile) :
     iniSections = {}
     for section in config.sections() :
         iniSections[section] = {}
-        for (k,v) in config.items(section).items() :
+        for (k,v) in config.items(section) :
             if v == "" : v = None
             iniSections[section][k] = v
 

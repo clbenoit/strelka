@@ -72,7 +72,7 @@ def getBamChromInfo(htsfileBin,bam) :
     info = {}
     chromIndex=0
 
-    proc=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE)
+    proc=subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,universal_newlines=True)
     for line in proc.stdout :
         if not line.startswith("@SQ") : continue
         w = line.strip().split('\t')
@@ -108,7 +108,7 @@ def getTabixChromSet(tabixBin, tabixFile) :
 
     chromSet = set()
     tabixCmd = [tabixBin, "-l", tabixFile]
-    proc=subprocess.Popen(tabixCmd, stdout=subprocess.PIPE)
+    proc=subprocess.Popen(tabixCmd, stdout=subprocess.PIPE, universal_newlines=True)
     for line in proc.stdout :
         chrom = line.strip()
         chromSet.add(chrom)

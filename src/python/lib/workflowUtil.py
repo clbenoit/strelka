@@ -206,8 +206,8 @@ def getChromIntervals(chromOrder, chromSizes, segmentSize, genomeRegion = None) 
                     chromEnd=genomeRegion["end"]
 
         chromSize=(chromEnd-chromStart+1)
-        chromSegments=1+((chromSize-1)/segmentSize)
-        segmentBaseSize=chromSize/chromSegments
+        chromSegments=1+((chromSize-1)//segmentSize)
+        segmentBaseSize=chromSize//chromSegments
         nPlusOne=chromSize%chromSegments
         start=chromStart
         for i in range(chromSegments) :
