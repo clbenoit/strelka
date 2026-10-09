@@ -87,8 +87,13 @@ private:
         return qc;
     }
 
-    static void invalid_qscore_error(const int qscore, const char* label);
-    static void high_qscore_error(const int qscore, const char* label);
+    // both error functions always throw (noreturn), so after the check the qscore
+    // is proven in [0,MAX_QSCORE] range - needed for gcc's -Warray-bounds on the
+    // table lookups below:
+    [[noreturn]] static
+    void invalid_qscore_error(const int qscore, const char* label);
+    [[noreturn]] static
+    void high_qscore_error(const int qscore, const char* label);
 
     static
     void

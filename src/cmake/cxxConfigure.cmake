@@ -432,10 +432,11 @@ append_args (CMAKE_CXX_FLAGS "${CXX_WARN_FLAGS}")
 # other customizations
 #
 if (${GNU_COMPAT_COMPILER})
+    # boost 1.92 (header-only math) requires C++14:
     if ((NOT ${CMAKE_CXX_COMPILER_ID} STREQUAL "Intel") OR (${COMPILER_VERSION} VERSION_LESS "15.0"))
-        append_args (CMAKE_CXX_FLAGS "-std=c++0x")
+        append_args (CMAKE_CXX_FLAGS "-std=c++14")
     else ()
-        append_args (CMAKE_CXX_FLAGS "-std=c++11")
+        append_args (CMAKE_CXX_FLAGS "-std=c++14")
     endif ()
 
     # The intel compilers make a LOT of remarks by default. Turn these down a little bit here so that more

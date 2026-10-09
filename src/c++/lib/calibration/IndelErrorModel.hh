@@ -23,6 +23,8 @@
 
 #include "starling_common/AlleleReportInfo.hh"
 
+#include <limits>
+
 
 /// \brief Organizes indel error rate information.
 ///

@@ -249,7 +249,20 @@ struct error_minfunc_model3 : public codemin::minfunc_interface<double>
 
     double val(const double* in) override
     {
-        argToParameters(in,_params);
+        if (_isLockTheta)
+        {
+            // the minimizer only passes SIZE-1 parameters while theta is locked; pad the buffer
+            // so argToParameters doesn't read past the end of the minimizer's workspace:
+            double padded[MIN_PARAMS3::SIZE];
+            for (unsigned i(0); i<(MIN_PARAMS3::SIZE-1); ++i)
+                padded[i] = in[i];
+            padded[MIN_PARAMS3::LN_THETA] = defaultLogTheta;
+            argToParameters(padded,_params);
+        }
+        else
+        {
+            argToParameters(in,_params);
+        }
         return -contextLogLhood(_exportedContextData,
                                 _params[MIN_PARAMS3::LN_INSERT_ERROR_RATE],
                                 _params[MIN_PARAMS3::LN_DELETE_ERROR_RATE],

@@ -50,7 +50,7 @@ qphred_cache()
 
 
 
-void
+[[noreturn]] void
 qphred_cache::
 invalid_qscore_error(const int qscore,
                      const char* label)
@@ -61,7 +61,7 @@ invalid_qscore_error(const int qscore,
 }
 
 
-void
+[[noreturn]] void
 qphred_cache::
 high_qscore_error(const int qscore,
                   const char* label)
