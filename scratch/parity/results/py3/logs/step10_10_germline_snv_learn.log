@@ -1,0 +1,63 @@
+/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/src/python/scoringModelTraining/germline/bin/evs_learn.py:114: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '0' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+  df.fillna("0", inplace=True)
+[Parallel(n_jobs=8)]: Using backend ThreadingBackend with 8 concurrent workers.
+[Parallel(n_jobs=8)]: Done   2 tasks      | elapsed:    0.0s
+[Parallel(n_jobs=8)]: Done   9 tasks      | elapsed:    0.0s
+[Parallel(n_jobs=8)]: Done  16 tasks      | elapsed:    0.0s
+[Parallel(n_jobs=8)]: Done  25 tasks      | elapsed:    0.0s
+[Parallel(n_jobs=8)]: Done  34 tasks      | elapsed:    0.0s
+[Parallel(n_jobs=8)]: Done  41 out of  50 | elapsed:    0.0s remaining:    0.0s
+[Parallel(n_jobs=8)]: Done  47 out of  50 | elapsed:    0.0s remaining:    0.0s
+[Parallel(n_jobs=8)]: Done  50 out of  50 | elapsed:    0.0s finished
+Using custom learning parameters: {'n_jobs': 8, 'max_depth': 12, 'min_samples_leaf': 2, 'n_estimators': 50, 'max_features': None, 'verbose': 10, 'random_state': 42}
+Reading '/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/scratch/parity/results/py3/germline_snv_features.csv'
+building tree 7 of 50
+building tree 2 of 50
+building tree 4 of 50
+building tree 3 of 50
+building tree 1 of 50
+building tree 5 of 50
+building tree 6 of 50
+building tree 8 of 50
+building tree 9 of 50
+building tree 10 of 50
+building tree 11 of 50
+building tree 12 of 50
+building tree 13 of 50
+building tree 14 of 50
+building tree 15 of 50
+building tree 16 of 50
+building tree 17 of 50
+building tree 18 of 50
+building tree 19 of 50
+building tree 20 of 50
+building tree 21 of 50
+building tree 22 of 50
+building tree 23 of 50
+building tree 24 of 50
+building tree 25 of 50
+building tree 26 of 50
+building tree 27 of 50
+building tree 28 of 50
+building tree 29 of 50
+building tree 30 of 50
+building tree 31 of 50
+building tree 35 of 50
+building tree 34 of 50
+building tree 32 of 50
+building tree 36 of 50
+building tree 37 of 50
+building tree 38 of 50
+building tree 39 of 50
+building tree 33 of 50
+building tree 40 of 50
+building tree 43 of 50
+building tree 41 of 50
+building tree 46 of 50
+building tree 47 of 50
+building tree 48 of 50
+building tree 44 of 50
+building tree 49 of 50
+building tree 45 of 50
+building tree 50 of 50
+building tree 42 of 50

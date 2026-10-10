@@ -1,0 +1,5 @@
+/workspace/.opencode/state/ref-py27-packages/sklearn/ensemble/weight_boosting.py:29: DeprecationWarning: numpy.core.umath_tests is an internal NumPy module and should not be imported. It will be removed in a future NumPy release.
+  from numpy.core.umath_tests import inner1d
+Using custom learning parameters: {u'n_estimators': 50, u'max_features': u'log2', u'n_jobs': 8, u'max_depth': 4, u'random_state': 42}
+TP: 2 FP: 20
+('wrote', 'scratch/parity/results/py2/model_somatic_indel.pkl')

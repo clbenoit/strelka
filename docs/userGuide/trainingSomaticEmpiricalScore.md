@@ -26,11 +26,18 @@ This document outlines the process of training a somatic Empirical Variant Score
 ## Requirements
 
 Strelka somatic EVS training has additional dependencies which are not included
-in the primary build system. All packages required to retrain the EVS model and
-run the steps in this guide are provided in the [training environment
+in the primary build system. The training scripts require **Python 3 (3.10 or
+newer)**; the pinned dependency set is provided in
+[`requirements-training.txt`](../../../src/python/scoringModelTraining/requirements-training.txt)
+and the [training environment
 Dockerfile](trainingSomaticEmpiricalScore/Dockerfile), which can be used to
 either setup an EVS training docker image or as a guideline to install
 all dependencies on another system.
+
+```
+python3 -m venv venv-training
+venv-training/bin/pip install ${STRELKA_SOURCE_PATH}/src/python/scoringModelTraining/requirements-training.txt
+```
 
 ## Step 1: Build a training data set
 
@@ -46,9 +53,9 @@ Given a strelka somatic VCF with optional EVSF output and a truth list, training
 TP/FP/FN labeling can be produced as follows:
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/vcf_to_feature_csv.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/vcf_to_feature_csv.py \
     --truth ${STRELKA_INSTALL_PATH}/share/demo/strelka/data/PG_admix_truth_snvs_chr21_1-25000000.vcf.gz \
-    --features strelka.snv \
+    --features somatic.snv \
     --output admix_training_data.csv \
     --testSet chr2 \
     --testSet chr20 \
@@ -72,9 +79,9 @@ An example is shown below, note the `--features` argument below must match that 
 the input training dataset(s), or else list a set of features present in all input dataset(s).
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_learn.py \
-    --features strelka.snv \
-    --model strelka.rf \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_learn.py \
+    --features somatic.snv \
+    --model somatic.rf \
     --plots \
     --output admix_training_model.pickle \
     admix_training_data.csv
@@ -85,8 +92,8 @@ python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_learn.
 Given a trained model any labeled testing data can be scored.
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_evaluate.py \
-    --features strelka.snv \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_evaluate.py \
+    --features somatic.snv \
     --classifier admix_training_model.pickle \
     --output admix_classified.csv \
     admix_test_data.csv
@@ -111,7 +118,7 @@ Any scored test data output can be further processed to evaluate precision / rec
 follows:
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_pr.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_pr.py \
      --output admix_precisionrecall.csv \
      admix_classified.csv
 ```
@@ -169,7 +176,7 @@ and testing with the training data.
 Strelka uses models in JSON format, which can be produced from the model pickle file as follows:
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_exportmodel.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/somatic/bin/evs_exportmodel.py \
     --classifier admix_training_model.pickle \
     --output admix_training_model.json
 ```

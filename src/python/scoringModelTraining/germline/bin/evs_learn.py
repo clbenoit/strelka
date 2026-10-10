@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Strelka - Small Variant Caller
 # Copyright (c) 2009-2018 Illumina, Inc.
@@ -109,7 +109,7 @@ def getDataSet(inputs, args) :
     datasets = []
     for inputFile in inputs:
         inputFile = os.path.abspath(inputFile)
-        print "Reading '%s'" % (inputFile)
+        print("Reading '%s'" % (inputFile))
         df = pandas.read_csv(inputFile, na_values=".")
         df.fillna("0", inplace=True)
         # Remove false negatives before any subsampling:
@@ -118,22 +118,22 @@ def getDataSet(inputs, args) :
         if args.sample_input:
             p_rows = min(df.shape[0], sample_input)
             p_rows_selected = random.sample(df.index, p_rows)
-            df = pandas.DataFrame(df.ix[p_rows_selected])
+            df = pandas.DataFrame(df.loc[p_rows_selected])
 
         if args.balance_per_sample:
             tps = df[df["tag"] == "TP"]
             fps = df[df["tag"] == "FP"]
             if args.ambig:
                 ambigs = df[df["tag"] == "UNK"]
-                print "TP: %d FP: %d, UNK: %d" % (tps.shape[0], fps.shape[0], ambigs.shape[0])
+                print("TP: %d FP: %d, UNK: %d" % (tps.shape[0], fps.shape[0], ambigs.shape[0]))
             else:
-                print "TP: %d FP: %d" % (tps.shape[0], fps.shape[0])
+                print("TP: %d FP: %d" % (tps.shape[0], fps.shape[0]))
             if tps.shape[0] < fps.shape[0]:
                 rows_selected = random.sample(fps.index, tps.shape[0])
-                fps = pandas.DataFrame(fps.ix[rows_selected])
+                fps = pandas.DataFrame(fps.loc[rows_selected])
             elif fps.shape[0] < tps.shape[0]:
                 rows_selected = random.sample(tps.index, fps.shape[0])
-                tps = pandas.DataFrame(tps.ix[rows_selected])
+                tps = pandas.DataFrame(tps.loc[rows_selected])
 
             if tps.shape[0] < fps.shape[0]:
                 fps = fps.sample(n=tps.shape[0])
@@ -141,11 +141,11 @@ def getDataSet(inputs, args) :
                 tps = tps.sample(n=fps.shape[0])
             if args.ambig:
                 rows_selected = random.sample(ambigs.index, fps.shape[0])
-                ambigs = pandas.DataFrame(ambigs.ix[rows_selected])
-                print "Downsampled to TP: %d,  FP: %d, UNK: %d" % (tps.shape[0], fps.shape[0], ambigs.shape[0])
+                ambigs = pandas.DataFrame(ambigs.loc[rows_selected])
+                print("Downsampled to TP: %d,  FP: %d, UNK: %d" % (tps.shape[0], fps.shape[0], ambigs.shape[0]))
                 df = pandas.concat([tps, fps, ambigs])
             else:
-                print "Downsampled to TP: %d FP: %d" % (tps.shape[0], fps.shape[0])
+                print("Downsampled to TP: %d FP: %d" % (tps.shape[0], fps.shape[0]))
                 df = pandas.concat([tps, fps])
 
         df["weight"] = 1
@@ -171,9 +171,9 @@ def main():
     pars = {}
     if args.parameters :
         pars = json.load(open(args.parameters))
-        print "Using custom learning parameters: %s" % str(pars)
+        print("Using custom learning parameters: %s" % str(pars))
     else :
-        print "Using default learning parameters."
+        print("Using default learning parameters.")
 
     model = evs.EVSModel.createNew(args.model)
 
@@ -196,8 +196,8 @@ def main():
         nrows = min(tpdata2.shape[0], fpdata2.shape[0])
         tp_rows_selected = random.sample(tpdata2.index, nrows)
         fp_rows_selected = random.sample(fpdata2.index, nrows)
-        tpdata = tpdata2.ix[tp_rows_selected].copy()
-        fpdata = fpdata2.ix[fp_rows_selected].copy()
+        tpdata = tpdata2.loc[tp_rows_selected].copy()
+        fpdata = fpdata2.loc[fp_rows_selected].copy()
 
     if args.ambig:
         fpcounts = fpdata["tag"].value_counts()
@@ -210,7 +210,7 @@ def main():
     if args.plots and hasattr(model, "plots"):
         model.plots(args.output + ".plots", features)
     elif args.plots:
-        print "No plots created, this is not supported by %s" % args.model
+        print("No plots created, this is not supported by %s" % args.model)
 
 
 if __name__ == '__main__':

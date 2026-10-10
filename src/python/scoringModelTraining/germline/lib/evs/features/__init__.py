@@ -20,10 +20,7 @@
 import abc
 
 
-class FeatureSet(object):
-    """ VCF paired Feature set for somatic comparison """
-
-    __metaclass__ = abc.ABCMeta
+class FeatureSet(object, metaclass=abc.ABCMeta):
 
     def __init__(self):
         pass
@@ -56,7 +53,7 @@ class FeatureSet(object):
         return FeatureSet.sets[name]()
 
 
-import GermlineSNV   # noqa
-import GermlineIndel   # noqa
-import RNASNV   # noqa
-import RNAIndel   # noqa
+from . import GermlineSNV   # noqa
+from . import GermlineIndel   # noqa
+from . import RNASNV   # noqa
+from . import RNAIndel   # noqa

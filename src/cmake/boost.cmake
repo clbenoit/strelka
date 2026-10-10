@@ -36,15 +36,30 @@ macro (initBoostParams)
     # required boost libraries
     set (THIS_BOOST_VERSION 1.92.0)
     # note we default to alphabetical order here, except where boost libraries depend on
-    # each other (timer->chrono)
+    # each other (timer->chrono).
+    # Boost >= 1.69 "system" is header-only (no static library), and the legacy FindBoost
+    # module (forced below via Boost_NO_BOOST_CMAKE) requires a library per requested
+    # component, so "system" must not be requested here. Its headers are picked up from
+    # Boost_INCLUDE_DIRS and nothing needs to be linked for it.
     set (THIS_BOOST_COMPONENTS date_time filesystem program_options
-                               serialization system timer chrono unit_test_framework)
+                               serialization timer chrono unit_test_framework)
 
     # the name given to boost.build and the library name are the same for all libraries, except
     # for test, so we need two lists now:
     set (THIS_BOOST_BUILD_COMPONENTS date_time filesystem program_options
                                      serialization system timer chrono test)
     set (Boost_USE_STATIC_LIBS ON)
+    # Force the legacy FindBoost module: with CMake >= 3.27, find_package(Boost) delegates
+    # to the BoostConfig.cmake installed by "b2 install" (Boost >= 1.70) as soon as
+    # BOOST_ROOT points at the bootstrap install. On a fresh configure, the first
+    # find_package (no BOOST_ROOT yet, boost not built) runs the legacy FindBoost section,
+    # which defaults Boost_USE_DEBUG_RUNTIME=TRUE; that leaked default then makes the
+    # per-library variant selection in BoostConfig.cmake reject every release-runtime
+    # static library ("No suitable build variant has been found"), so no Boost libraries
+    # end up on the link line and unit-test targets fail to link. The legacy module
+    # resolves the static libraries directly (no -mt/-d suffixed names:
+    # Boost_USE_MULTITHREADED=OFF above) and works on both fresh and reused boost stages.
+    set (Boost_NO_BOOST_CMAKE ON)
     if (NOT WIN32)
         # bjam on windows ignores this setting so skip for win32:
         set (Boost_USE_MULTITHREADED OFF)

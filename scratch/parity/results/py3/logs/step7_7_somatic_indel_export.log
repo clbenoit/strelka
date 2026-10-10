@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/src/python/scoringModelTraining/somatic/bin/evs_exportmodel.py", line 72, in <module>
+    main()
+    ~~~~^^
+  File "/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/src/python/scoringModelTraining/somatic/bin/evs_exportmodel.py", line 67, in main
+    model = evs.EVSModel.createFromFile(args.classifier)
+  File "/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/src/python/scoringModelTraining/somatic/lib/evs/__init__.py", line 90, in createFromFile
+    model = cls.createNew(saveobj[0])
+  File "/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/src/python/scoringModelTraining/somatic/lib/evs/__init__.py", line 83, in createNew
+    model = cls._models[mname]()
+            ~~~~~~~~~~~^^^^^^^
+KeyError: 'strelka.rf.indel'

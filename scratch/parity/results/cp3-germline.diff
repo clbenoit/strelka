@@ -1,0 +1,8 @@
+--- /dev/fd/63	2026-10-10 17:50:51.639075394 +0000
++++ /dev/fd/62	2026-10-10 17:50:51.639075394 +0000
+@@ -1 +1 @@
+-compareStrelkaGermlineVcfs.bash filteredVcf: strelkaGermlineCP3m2/results/variants/variants.vcf.gz
++compareStrelkaGermlineVcfs.bash filteredVcf: strelkaGermlineCP3m3/results/variants/variants.vcf.gz
+@@ -25 +25 @@
+-demo20	3664	.	TC	T	286	NoPassedVariantGTs	CIGAR=1M1D;RU=C;REFREP=4;IDREP=3;MQ=59	GT:GQ:GQX:DPI:AD:ADF:ADR:FT:PL	0/1:249:3:41:18,20:10,10:8,10:LowGQX:322,0,246	0/0:70:70:25:25,0:10,0:15,0:PASS:0,73,493
++demo20	3664	.	TC	T	286	NoPassedVariantGTs	CIGAR=1M1D;RU=C;REFREP=4;IDREP=3;MQ=59	GT:GQ:GQX:DPI:AD:ADF:ADR:FT:PL	0/1:249:4:41:18,20:10,10:8,10:LowGQX:322,0,246	0/0:70:70:25:25,0:10,0:15,0:PASS:0,73,493

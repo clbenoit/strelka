@@ -25,7 +25,10 @@ misc vcf utilities
 def openMaybeGzip(fileName):
     import gzip
     if fileName.endswith(".gz"):
-        return gzip.GzipFile(fileName)
+        # text mode ("rt"): lines come back as str in both py2 and py3,
+        # matching the plain-open() branch below (callers compare line
+        # prefixes against str literals).
+        return gzip.open(fileName, "rt")
     else:
         return open(fileName)
 

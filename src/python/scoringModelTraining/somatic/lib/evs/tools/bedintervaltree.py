@@ -18,8 +18,8 @@
 #
 
 import gzip
-from bx.intervals.intersection import Interval
-from bx.intervals.intersection import IntervalTree
+from evs.tools.intervaltree import Interval
+from evs.tools.intervaltree import IntervalTree
 from collections import defaultdict
 
 
@@ -95,7 +95,9 @@ class BedIntervalTree(object):
 
         """
         if bed_file.endswith(".gz"):
-            bed = gzip.open(bed_file)
+            # text mode ("rt"): entries come back as str in py3 (py2 already
+            # produced str lines), matching the plain open() branch below.
+            bed = gzip.open(bed_file, "rt")
         else:
             bed = open(bed_file)
 

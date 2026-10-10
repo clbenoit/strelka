@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Strelka - Small Variant Caller
 # Copyright (c) 2009-2018 Illumina, Inc.
@@ -72,7 +72,7 @@ def main():
     datasets = []
     for i in args.inputs:
         i = os.path.abspath(i)
-        print "Reading %s" % i
+        print("Reading %s" % i)
         df = pandas.read_csv(i)
         datasets.append(df)
 
@@ -87,16 +87,16 @@ def main():
     result = []
     regression = []
 
-    print "Total: %d" % len(dataset)
+    print("Total: %d" % len(dataset))
     fns = dataset[dataset["tag"] == "FN"].shape[0]
-    print "fn: %d" % fns
-    print "tp: %d" % len(dataset[dataset["tag"] == "TP"])
-    print "fp: %d" % len(dataset[dataset["tag"] == "FP"])
-    print "unk: %d" % len(dataset[dataset["tag"] == "UNK"])
+    print("fn: %d" % fns)
+    print("tp: %d" % len(dataset[dataset["tag"] == "TP"]))
+    print("fp: %d" % len(dataset[dataset["tag"] == "FP"]))
+    print("unk: %d" % len(dataset[dataset["tag"] == "UNK"]))
     dataset = pandas.DataFrame(dataset[dataset["tag"].isin(["TP", "FP"])])
     data = pandas.DataFrame(dataset.dropna(subset=["qual"]))
     data = data.iloc[numpy.random.permutation(len(data))] # shuffle before sorting: this ensures random order within tied groups
-    data = data.sort("qual")
+    data = data.sort_values("qual")
 
     # note this call fails on numpy 1.9.x (default package for Ubuntu 14.04) TODO: workaround?
     bins = numpy.array_split(data,args.nbins)
@@ -120,7 +120,7 @@ def main():
 
         counter += 1
         if counter % 10 == 0:
-            print "Processed %i / %i values" % (counter, len(bins))
+            print("Processed %i / %i values" % (counter, len(bins)))
 
     df = pandas.DataFrame(result)
     df["Q"] = phred(df["qual"])
@@ -128,7 +128,7 @@ def main():
     regr = linear_model.LinearRegression()
     regr.fit(phred(df["qual"]).reshape(-1,1), phred(df["precision"]).reshape(-1,1))
     df["calibratedQ"] = regr.predict(phred(df["qual"]).reshape(-1,1))
-    print df
+    print(df)
     print("Coefficient: {}, Intercept: {}".format(regr.coef_[0,0], regr.intercept_[0]))
     df.to_csv(args.output)
     json.dump({"Coefficient" : regr.coef_[0,0], "Intercept" : regr.intercept_[0]}, open(args.calibration, 'w'))
