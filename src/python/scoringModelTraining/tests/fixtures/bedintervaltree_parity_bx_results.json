@@ -1,0 +1,379 @@
+{
+ "counts": {
+  "FP": 9, 
+  "total": 13, 
+  "lowqual": 2, 
+  "repeat": 2
+ }, 
+ "queries": [
+  {
+   "start": 150, 
+   "end": 250, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     101, 
+     201, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     151, 
+     251, 
+     [
+      "repeat", 
+      "repeats", 
+      "repeat"
+     ], 
+     "demo20"
+    ], 
+    [
+     200, 
+     301, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 201, 
+   "end": 201, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     151, 
+     251, 
+     [
+      "repeat", 
+      "repeats", 
+      "repeat"
+     ], 
+     "demo20"
+    ], 
+    [
+     200, 
+     301, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 200, 
+   "end": 201, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     101, 
+     201, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     151, 
+     251, 
+     [
+      "repeat", 
+      "repeats", 
+      "repeat"
+     ], 
+     "demo20"
+    ], 
+    [
+     200, 
+     301, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 201, 
+   "end": 300, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     151, 
+     251, 
+     [
+      "repeat", 
+      "repeats", 
+      "repeat"
+     ], 
+     "demo20"
+    ], 
+    [
+     200, 
+     301, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 301, 
+   "end": 400, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     301, 
+     401, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     306, 
+     311, 
+     [
+      "repeat", 
+      "repeats", 
+      "repeat"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 100, 
+   "end": 101, 
+   "chrom": "demo20", 
+   "results": []
+  }, 
+  {
+   "start": 601, 
+   "end": 700, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     501, 
+     1001, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     601, 
+     701, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     601, 
+     701, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     651, 
+     661, 
+     [
+      "lowqual", 
+      "editing", 
+      "lowqual"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 601, 
+   "end": 601, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     501, 
+     1001, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 2001, 
+   "end": 2010, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     2001, 
+     2011, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 2001, 
+   "end": 2021, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     2001, 
+     2011, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     2011, 
+     2021, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 5000, 
+   "end": 5010, 
+   "chrom": "demo20", 
+   "results": []
+  }, 
+  {
+   "start": 151, 
+   "end": 251, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     101, 
+     201, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     151, 
+     251, 
+     [
+      "repeat", 
+      "repeats", 
+      "repeat"
+     ], 
+     "demo20"
+    ], 
+    [
+     200, 
+     301, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 660, 
+   "end": 660, 
+   "chrom": "demo20", 
+   "results": [
+    [
+     501, 
+     1001, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     601, 
+     701, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     601, 
+     701, 
+     [
+      "FP"
+     ], 
+     "demo20"
+    ], 
+    [
+     651, 
+     661, 
+     [
+      "lowqual", 
+      "editing", 
+      "lowqual"
+     ], 
+     "demo20"
+    ]
+   ]
+  }, 
+  {
+   "start": 41, 
+   "end": 61, 
+   "chrom": "chr1", 
+   "results": [
+    [
+     1, 
+     51, 
+     [
+      "FP"
+     ], 
+     "chr1"
+    ], 
+    [
+     41, 
+     61, 
+     [
+      "lowqual", 
+      "editing", 
+      "lowqual"
+     ], 
+     "chr1"
+    ]
+   ]
+  }, 
+  {
+   "start": 51, 
+   "end": 60, 
+   "chrom": "chr1", 
+   "results": [
+    [
+     41, 
+     61, 
+     [
+      "lowqual", 
+      "editing", 
+      "lowqual"
+     ], 
+     "chr1"
+    ]
+   ]
+  }, 
+  {
+   "start": 1, 
+   "end": 100, 
+   "chrom": "chrMissing", 
+   "results": []
+  }
+ ]
+}

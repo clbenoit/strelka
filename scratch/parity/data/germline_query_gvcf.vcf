@@ -1,0 +1,95 @@
+##fileformat=VCFv4.1
+##fileDate=20261010
+##source=strelka
+##source_version=UNKNOWN
+##startTime=Sat Oct 10 17:20:18 2026
+##cmdline=../install/bin/configureStrelkaGermlineWorkflow.py --bam=/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/install/share/demo/strelka/data/NA12891_demo20.bam --referenceFasta=/workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/install/share/demo/strelka/data/demo20.fa --callMemMb=1024 --exome --disableSequenceErrorEstimation --reportEVSFeatures --runDir=strelkaGermlineDemoAnalysisEVSF
+##reference=file:///workspace/.opencode/state/opencode/worktree/38/strelka-py3-training/install/share/demo/strelka/data/demo20.fa
+##contig=<ID=demo20,length=5000>
+##content=strelka germline small-variant calls
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the region described in this record">
+##INFO=<ID=BLOCKAVG_min30p3a,Number=0,Type=Flag,Description="Non-variant multi-site block. Non-variant blocks are defined independently for each sample. All sites in such a block are constrained to be non-variant, have the same filter value, and have sample values {GQX,DP,DPF} in range [x,y], y <= max(x+3,(x*1.3)).">
+##INFO=<ID=SNVHPOL,Number=1,Type=Integer,Description="SNV contextual homopolymer length">
+##INFO=<ID=CIGAR,Number=A,Type=String,Description="CIGAR alignment for each alternate indel allele">
+##INFO=<ID=RU,Number=A,Type=String,Description="Smallest repeating sequence unit extended or contracted in the indel allele relative to the reference. RUs are not reported if longer than 20 bases">
+##INFO=<ID=REFREP,Number=A,Type=Integer,Description="Number of times RU is repeated in reference">
+##INFO=<ID=IDREP,Number=A,Type=Integer,Description="Number of times RU is repeated in indel allele">
+##INFO=<ID=MQ,Number=1,Type=Integer,Description="RMS of mapping quality">
+##INFO=<ID=EVSF,Number=.,Type=Float,Description="Empirical variant scoring features">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GQX,Number=1,Type=Integer,Description="Empirically calibrated genotype quality score for variant sites, otherwise minimum of {Genotype quality assuming variant position,Genotype quality assuming non-variant position}">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Filtered basecall depth used for site genotyping. In a non-variant multi-site block this value represents the average of all sites in the block.">
+##FORMAT=<ID=DPF,Number=1,Type=Integer,Description="Basecalls filtered from input prior to site genotyping. In a non-variant multi-site block this value represents the average of all sites in the block.">
+##FORMAT=<ID=MIN_DP,Number=1,Type=Integer,Description="Minimum filtered basecall depth used for site genotyping within a non-variant multi-site block">
+##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed. For indels this value only includes reads which confidently support each allele (posterior prob 0.51 or higher that read contains indicated allele vs all other intersecting indel alleles)">
+##FORMAT=<ID=ADF,Number=.,Type=Integer,Description="Allelic depths on the forward strand">
+##FORMAT=<ID=ADR,Number=.,Type=Integer,Description="Allelic depths on the reverse strand">
+##FORMAT=<ID=FT,Number=1,Type=String,Description="Sample filter, 'PASS' indicates that all filters have passed for this sample">
+##FORMAT=<ID=DPI,Number=1,Type=Integer,Description="Read depth associated with indel, taken from the site preceding the indel">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=PS,Number=1,Type=Integer,Description="Phase set identifier">
+##FORMAT=<ID=SB,Number=1,Type=Float,Description="Sample site strand bias">
+##FILTER=<ID=IndelConflict,Description="Indel genotypes from two or more loci conflict in at least one sample">
+##FILTER=<ID=SiteConflict,Description="Site is filtered due to an overlapping indel call filter">
+##FILTER=<ID=LowGQX,Description="Locus GQX is below threshold or not present">
+##FILTER=<ID=HighDPFRatio,Description="The fraction of basecalls filtered out at a site is greater than 0.4">
+##FILTER=<ID=HighSNVSB,Description="Sample SNV strand bias value (SB) exceeds 10">
+##FILTER=<ID=LowDepth,Description="Locus depth is below 3">
+##FILTER=<ID=NotGenotyped,Description="Locus contains forcedGT input alleles which could not be genotyped">
+##FILTER=<ID=PloidyConflict,Description="Genotype call from variant caller not consistent with chromosome ploidy">
+##snv_scoring_features=GenotypeCategory,SampleRMSMappingQuality,SiteHomopolymerLength,SampleStrandBias,SampleRMSMappingQualityRankSum,SampleReadPosRankSum,RelativeTotalLocusDepth,SampleUsedDepthFraction,ConservativeGenotypeQuality,NormalizedAltHaplotypeCountRatio,I_BaseQRankSum,SampleIndelAlleleBiasLower,SampleIndelAlleleBias,I_RawPos,I_RawBaseQ,mapqZeroFraction,QUAL_NORM,F_GQX_NORM,F_GQ_NORM,SampleRefAlleleDepthFraction,VariantAlleleQuality,F_GQ,SamplePrimaryAltAlleleDepthFraction
+##indel_scoring_features=GenotypeCategory,SampleIndelRepeatCount,SampleIndelRepeatUnitSize,SampleIndelAlleleBiasLower,SampleIndelAlleleBias,SampleProxyRMSMappingQuality,RelativeTotalLocusDepth,SamplePrimaryAltAlleleDepthFraction,ConservativeGenotypeQuality,InterruptedHomopolymerLength,ContextCompressability,IndelCategory,NormalizedAltHaplotypeCountRatio,SampleAlleleCountStrandBias,SampleRefRepeatCount,mapqZeroFraction,F_DPI_NORM,QUAL_NORM,F_GQX_NORM,F_GQ_NORM,SampleRefAlleleDepthFraction,VariantAlleleQuality,F_GQ
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	NA12891
+demo20	1	.	T	.	.	LowGQX	END=899;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	.:.:0:0:0
+demo20	900	.	G	.	.	LowGQX;LowDepth	END=906;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:5:2:0:2
+demo20	907	.	T	.	.	LowGQX	END=931;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:7:4:0:3
+demo20	932	.	G	.	.	PASS	END=990;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:15:8:0:6
+demo20	991	.	C	G	38	PASS	SNVHPOL=2;MQ=58;EVSF=0,57.655,2,2.7723,-0.52223,-0.94002,1,0.9,38,1,-1.3578,0.2929,-0,60.6,32.6,0,4.2222,4.2222,7.8889,0.55556,38,71,0.44444	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:71:38:9:1:5,4:1,4:4,0:2.8:PASS:72,0,123
+demo20	992	.	C	.	.	PASS	END=1084;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:24:14:0:9
+demo20	1085	.	T	.	.	PASS	.	GT:GQX:DP:DPF:MIN_DP	0/0:22:21:1:21
+demo20	1086	.	G	.	.	PASS	END=1148;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:54:22:1:19
+demo20	1148	.	C	CTAT	72	PASS	CIGAR=1M3I;RU=TAT;REFREP=1;IDREP=2;MQ=59;EVSF=0,2,3,0.19801,0.43447,58.839,1,0.42105,72,3,9,0,0.66667,-10.567,1,0,1,3.6,3.6,5.7,0.57895,72,114	GT:GQ:GQX:DPI:AD:ADF:ADR:FT:PL	0/1:114:72:20:11,8:5,3:6,5:PASS:111,0,147
+demo20	1149	.	T	.	.	PASS	END=1270;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:39:19:0:14
+demo20	1271	.	A	G	134	PASS	SNVHPOL=4;MQ=60;EVSF=0,60,4,-18.56,0,0.39984,1,1,126,-1,-0.044426,0.89829,0.20514,51,35.8,0,7.4444,7,7,0.44444,134,126,0.55556	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:126:126:18:0:8,10:7,6:1,4:-18.6:PASS:169,0,123
+demo20	1272	.	G	.	.	PASS	END=1507;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:39:20:1:14
+demo20	1508	.	A	G	156	PASS	SNVHPOL=3;MQ=60;EVSF=0,60,3,-21.471,0,-0.24618,1,0.95652,156,-1,0.21541,0.8773,0.18415,60.333,37.333,0,7.0909,7.0909,7.8182,0.45455,156,172,0.54545	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:172:156:22:1:10,12:4,6:6,6:-21.5:PASS:191,0,169
+demo20	1509	.	G	.	.	PASS	END=1582;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:27:17:0:10
+demo20	1583	.	A	.	.	PASS	END=1669;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:21:15:0:8
+demo20	1670	.	C	.	.	PASS	END=1705;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:45:19:0:16
+demo20	1706	.	C	T	304	PASS	SNVHPOL=2;MQ=60;EVSF=1,60,2,-35.537,0,0,1,1,54,-1,0,69.078,69.078,48.526,38.053,0,16,2.8421,2.8421,0,304,54,1	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	1/1:54:54:19:0:0,19:0,8:0,11:-35.5:PASS:342,57,0
+demo20	1707	.	G	.	.	PASS	END=1743;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:54:21:0:19
+demo20	1744	.	C	T	156	PASS	SNVHPOL=3;MQ=60;EVSF=0,60,3,-20.69,0,-0.39087,1,1,154,-1,-1.8477,1.1032,0.41004,55.667,37.75,0,7.4286,7.3333,7.5714,0.42857,156,159,0.57143	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:159:154:21:0:9,12:5,6:4,6:-20.7:PASS:191,0,156
+demo20	1745	.	G	.	.	PASS	END=1845;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:40:21:1:16
+demo20	1846	.	C	T	83	PASS	SNVHPOL=3;MQ=60;EVSF=0,60,3,-12.432,0,0.11323,1,0.96,83,-1,-1.2738,0.032479,1.8866,54.111,32.889,0,3.4583,3.4583,4.8333,0.66667,83,116,0.33333	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:116:83:24:1:16,8:13,5:3,3:-12.4:PASS:117,0,224
+demo20	1847	.	G	.	.	PASS	END=2073;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:45:21:0:16
+demo20	2074	.	T	C	123	PASS	SNVHPOL=2;MQ=60;EVSF=0,60,2,-9.7295,0,0.082117,1,0.96,123,-1,-0.57482,0.31557,0.17576,51.818,35.545,0,5.125,5.125,6.5,0.54167,123,156,0.45833	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:156:123:24:1:13,11:4,8:9,3:-9.7:PASS:158,0,191
+demo20	2075	.	A	.	.	PASS	END=2198;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:63:31:1:22
+demo20	2199	.	G	A	149	PASS	SNVHPOL=3;MQ=60;EVSF=0,60,3,-14.271,0,-1.0038,1,0.96552,149,-1,-0.74194,0.55387,-0,40.143,34.929,0,5.3214,5.3214,6.4643,0.5,149,181,0.5	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:181:149:28:1:14,14:12,5:2,9:-14.3:PASS:183,0,189
+demo20	2200	.	C	.	.	PASS	END=2300;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:60:30:1:26
+demo20	2301	.	G	T	184	PASS	SNVHPOL=2;MQ=59;EVSF=0,59.229,2,-21.035,0.254,-0.889,1,0.96667,161,-1,0.3175,1.4735,0.78032,55.722,35.389,0,6.3448,5.5517,5.5517,0.41379,184,161,0.58621	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:161:161:29:1:12,17:6,11:6,6:-21.0:PASS:219,0,158
+demo20	2302	.	T	.	.	PASS	END=2454;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:72:30:0:25
+demo20	2455	.	T	C	445	PASS	SNVHPOL=2;MQ=60;EVSF=1,60,2,-51.354,0,0,1,0.93939,90,-1,0,69.078,69.078,53.364,36.364,0,14.355,2.9032,2.9032,0,445,90,1	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	1/1:90:90:31:2:0,31:0,14:0,17:-51.4:PASS:370,93,0
+demo20	2456	.	G	.	.	PASS	END=2511;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:87:36:2:30
+demo20	2512	.	A	G	266	PASS	SNVHPOL=2;MQ=59;EVSF=0,58.753,2,-28.363,0.3849,1.0917,1,0.95122,151,-1,0.31192,3.6259,2.9327,43.846,36.808,0,6.8205,3.8718,3.8718,0.33333,266,151,0.66667	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:151:151:39:1:13,26:9,11:4,15:-28.4:PASS:300,0,148
+demo20	2513	.	T	.	.	PASS	END=2639;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:81:37:1:28
+demo20	2640	.	C	T	375	PASS	SNVHPOL=3;MQ=60;EVSF=1,60,3,-47.277,0,0,1,1,81,-1,0,69.078,69.078,55.607,36.25,0,13.393,2.8929,2.8929,0,375,81,1	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	1/1:81:81:28:0:0,28:0,14:0,14:-47.3:PASS:370,84,0
+demo20	2641	.	T	.	.	PASS	END=2659;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:60:23:0:21
+demo20	2660	.	G	T	283	PASS	SNVHPOL=3;MQ=60;EVSF=1,60,3,-36.165,0,0,1,0.95455,60,-1,0,69.078,69.078,41.318,35,0,13.476,2.8571,2.8571,0,283,60,1	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	1/1:60:60:21:1:0,21:0,11:0,10:-36.2:PASS:321,63,0
+demo20	2661	.	G	.	.	PASS	END=3037;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:41:27:1:18
+demo20	3038	.	C	.	.	PASS	END=3043;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:24:19:2:17
+demo20	3044	.	T	.	.	PASS	END=3053;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:28:20:1:17
+demo20	3054	.	G	C	107	PASS	SNVHPOL=2;MQ=59;EVSF=0,58.839,2,-12.848,-0.37796,-0.52915,1,1,107,-1,-0.60474,0.53086,-0,55.4,33.7,0,5.35,5.35,7,0.5,107,140,0.5	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:140:107:20:0:10,10:6,6:4,4:-12.8:PASS:142,0,153
+demo20	3055	.	C	.	.	PASS	END=3365;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:51:25:1:18
+demo20	3366	.	G	T	377	PASS	SNVHPOL=4;MQ=60;EVSF=1,60,4,-42.129,0,0,1,1,75,-1,0,69.078,69.078,42.077,35.692,0,14.5,2.8846,2.8846,0,377,75,1	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	1/1:75:75:26:0:0,26:0,15:0,11:-42.1:PASS:370,78,0
+demo20	3367	.	G	.	.	PASS	END=3536;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:60:28:0:21
+demo20	3537	.	C	T	95	PASS	SNVHPOL=2;MQ=59;EVSF=0,59.277,2,-11.349,0.21822,1.5077,1,0.96875,95,-1,-0.4166,0.014834,2.6485,63.636,33,0,3.0645,3.0645,4.129,0.67742,95,128,0.32258	GT:GQ:GQX:DP:DPF:AD:ADF:ADR:SB:FT:PL	0/1:128:95:31:1:21,10:8,6:13,4:-11.3:PASS:130,0,256
+demo20	3538	.	T	.	.	PASS	END=3664;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:54:29:1:19
+demo20	3664	.	TC	T	286	PASS	CIGAR=1M1D;RU=C;REFREP=4;IDREP=3;MQ=59;EVSF=0,3,1,0.83078,0.13764,59.437,1,0.52632,249,8,11,1,0.75556,-39.112,4,0,1,6.9756,6.0732,6.0732,0.47368,286,249	GT:GQ:GQX:DPI:AD:ADF:ADR:FT:PL	0/1:249:249:41:18,20:10,10:8,10:PASS:322,0,246
+demo20	3665	.	C	.	.	PASS	.	GT:GQX:DP:DPF:MIN_DP	0:249:19:0:19
+demo20	3666	.	C	.	.	PASS	END=4019;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:48:32:1:17
+demo20	4020	.	C	.	.	PASS	END=4059;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:24:12:1:9
+demo20	4060	.	C	.	.	PASS	END=4072;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:15:6:0:6
+demo20	4073	.	C	.	.	LowGQX	END=4091;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:7:4:0:3
+demo20	4092	.	T	.	.	LowGQX;LowDepth	END=4100;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	0/0:3:1:0:1
+demo20	4101	.	T	.	.	LowGQX	END=5000;BLOCKAVG_min30p3a	GT:GQX:DP:DPF:MIN_DP	.:.:0:0:0

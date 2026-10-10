@@ -32,8 +32,10 @@ specific training and truth data sets shown here are just small examples provide
 ## Requirements
 
 Strelka germline EVS training has additional dependencies which are not included
-in the primary build system. All packages required to retrain the EVS model and
-run the steps in this guide are provided in the
+in the primary build system. The training scripts require **Python 3 (3.10 or
+newer)**; the pinned dependency set is provided in
+[`requirements-training.txt`](../../../src/python/scoringModelTraining/requirements-training.txt)
+and the
 [training environment Dockerfile](trainingSomaticEmpiricalScore/Dockerfile)
 (shared with the somatic EVS training procedure), which can be used to either setup an EVS training docker image or as a guideline to install
 dependencies on another system.
@@ -58,7 +60,7 @@ First we need to filter out some unwanted gVCF entries. The following script rem
 
 ```bash
 gzip -dc genome.vcf.gz |\
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/filterTrainingVcf.py |\
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/filterTrainingVcf.py |\
 ${STRELKA_INSTALL_PATH}/libexec/bgzip -cf >|\
 filtered.vcf.gz
 ```
@@ -92,7 +94,7 @@ indel calls. The example command-line:
 
 ```
 gzip -dc happy_PG_annotated.vcf.gz |\
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/parseAnnotatedTrainingVcf.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/parseAnnotatedTrainingVcf.py \
     --testSet chr2 \
     --testSet chr20 \
     --snvOutput snv_training_data.csv \
@@ -116,7 +118,7 @@ The next step is to train a model given one or more labeled feature datasets pro
 An example is shown below; the `--features` argument below can be selected from germline.snv, germline.indel, rna.snv and rna.indel for snv or indel features in germline or rna models.
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_learn.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_learn.py \
     --features germline.snv \
     --model germline.rf \
     --output snv_model.pickle \
@@ -131,7 +133,7 @@ Given a trained model any labeled testing data can be scored. The testing data i
 csv training files used in step 2.
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_evaluate.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_evaluate.py \
     --features germline.snv \
     --classifier snv_model.pickle \
     --output snv_classified.csv \
@@ -155,7 +157,7 @@ Any scored test data output from step 3 can be further processed to evaluate pre
 follows:
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_pr.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_pr.py \
      -N 100 \
      --output snv_precisionrecall.csv \
      snv_classified.csv
@@ -212,7 +214,7 @@ ggsave("snv.png", width=4, height=3, dpi=120)
 The scored test data can also be used to generate a QQ plot and calibrate the model, so that reported EVS scores (GQX values) will correspond roughly with phred-scale precision:
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_qq.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_qq.py \
     --output snv_qq.csv \
     --calibration snv_calibration.json \
     snv_classified.csv
@@ -225,7 +227,7 @@ This produces a CSV output file that can be used to plot binned empirical precis
 Strelka uses models in JSON format, which can be produced from the model pickle file and (optionally) the calibration file as follows:
 
 ```
-python ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_exportmodel.py \
+python3 ${STRELKA_INSTALL_PATH}/share/scoringModelTraining/germline/bin/evs_exportmodel.py \
     --classifier snv_model.pickle \
     --output germlineSNVScoringModel.json \
     --calibration snv_calibration.json \

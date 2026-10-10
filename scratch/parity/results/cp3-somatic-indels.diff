@@ -1,0 +1,5 @@
+--- /dev/fd/63	2026-10-10 17:50:51.599075410 +0000
++++ /dev/fd/62	2026-10-10 17:50:51.599075410 +0000
+@@ -1 +1 @@
+-compareStrelkaSomaticVcfs.bash filteredVcf: strelkaSomaticCP3m2/results/variants/somatic.indels.vcf.gz
++compareStrelkaSomaticVcfs.bash filteredVcf: strelkaSomaticCP3m3/results/variants/somatic.indels.vcf.gz

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Strelka - Small Variant Caller
 # Copyright (c) 2009-2018 Illumina, Inc.
@@ -57,7 +57,7 @@ def main():
     datasets = []
     for i in args.inputs:
         i = os.path.abspath(i)
-        print "Reading %s" % i
+        print("Reading %s" % i)
         df = pandas.read_csv(i)
         datasets.append(df)
 
@@ -71,9 +71,9 @@ def main():
     p_rows_selected = random.sample(dataset.index, p_rows)
 
     try:
-        dataset.ix[p_rows_selected].sort(["CHROM", "POS"]).to_csv(args.output_1, index=False)
+        dataset.loc[p_rows_selected].sort_values(["CHROM", "POS"]).to_csv(args.output_1, index=False)
     except:
-        dataset.ix[p_rows_selected].to_csv(args.output_1, index=False)
+        dataset.loc[p_rows_selected].to_csv(args.output_1, index=False)
 
     if args.output_2:
         dataset.drop(p_rows_selected).to_csv(args.output_2, index=False)

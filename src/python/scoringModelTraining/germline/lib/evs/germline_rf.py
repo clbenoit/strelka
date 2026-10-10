@@ -103,7 +103,8 @@ class GermlineRF(EVSModel):
         full_model = meta
         full_model["Model"] = all_trees
         modelFile = {"CalibrationModels" : {calltype : { varianttype : full_model }}}
-        json.dump(modelFile, open(filename,"wb"))
+        with open(filename, "w") as fid:
+            json.dump(modelFile, fid)
 
 
     def plots(self, prefix, featurenames):
@@ -114,13 +115,13 @@ class GermlineRF(EVSModel):
         indices = np.argsort(importances)[::-1]
 
         # Print the feature ranking
-        print "Feature ranking:"
+        print("Feature ranking:")
 
-        for f in xrange(0, len(indices)):
-            print "%d. feature %d:%s (%f +- %f)" % (f + 1, indices[f],
+        for f in range(0, len(indices)):
+            print("%d. feature %d:%s (%f +- %f)" % (f + 1, indices[f],
                                                     featurenames[indices[f]],
                                                     importances[indices[f]],
-                                                    std[indices[f]])
+                                                    std[indices[f]]))
 
     def draw_trees(self):
         """ Draw trees in png files """

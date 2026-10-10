@@ -19,7 +19,7 @@
 
 import os
 import sys
-import cPickle
+import pickle
 import json
 
 
@@ -41,8 +41,14 @@ def dict_for_tree(tree):
         decision_dict[i] = [int(node_features[i]), float(node_thresholds[i])]
     node_values = tree.value
 
+    # sklearn < 0.22 lays out a classifier's tree.value as (n_nodes, 1, n_classes);
+    # sklearn >= 0.22 uses (n_nodes, n_classes). Normalize to the per-node
+    # (n_nodes, n_classes) layout so that node_votes[node] = [count(class0),
+    # count(class1)] exactly as consumed by the C++ RandomForestModel
+    # (vote.left / (vote.left + vote.right)).
+    if node_values.ndim == 3:
+        node_values = node_values[:, 0, :]
     node_values = node_values.tolist()
-    node_values = [i[0] for i in node_values]
     node_values_dict = {}
     for i in range(len(node_values)):
         node_values_dict[i] = node_values[i]
@@ -58,14 +64,14 @@ def dict_for_tree(tree):
 def read_pickled_classifier(pickle_fn):
     """ Read classifier from pickle file """
     with open(pickle_fn, 'rb') as fid:
-        clf = cPickle.load(fid)
+        clf = pickle.load(fid)
     return clf
 
 
 def write_classifier_pickle(clf, pickle_fn):
     """ store classifier in pickle file """
     with open(pickle_fn, 'wb') as fid:
-        cPickle.dump(clf, fid)
+        pickle.dump(clf, fid)
 
 
 def classifier_to_dict(clf):

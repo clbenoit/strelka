@@ -1,0 +1,12 @@
+/workspace/.opencode/state/ref-py27-packages/sklearn/ensemble/weight_boosting.py:29: DeprecationWarning: numpy.core.umath_tests is an internal NumPy module and should not be imported. It will be removed in a future NumPy release.
+  from numpy.core.umath_tests import inner1d
+Traceback (most recent call last):
+  File "/workspace/repos/strelka/src/python/scoringModelTraining/somatic/bin/evs_exportmodel.py", line 72, in <module>
+    main()
+  File "/workspace/repos/strelka/src/python/scoringModelTraining/somatic/bin/evs_exportmodel.py", line 67, in main
+    model = evs.EVSModel.createFromFile(args.classifier)
+  File "/workspace/repos/strelka/src/python/scoringModelTraining/somatic/lib/evs/__init__.py", line 92, in createFromFile
+    model = cls.createNew(saveobj[0])
+  File "/workspace/repos/strelka/src/python/scoringModelTraining/somatic/lib/evs/__init__.py", line 85, in createNew
+    model = cls._models[mname]()
+KeyError: 'strelka.rf.indel'

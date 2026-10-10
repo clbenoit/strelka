@@ -1,0 +1,1 @@
+{"n_jobs": 8, "max_depth": 4, "n_estimators": 50, "max_features": "log2", "random_state": 42}
