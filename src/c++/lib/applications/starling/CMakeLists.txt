@@ -17,4 +17,9 @@
 #
 #
 
+# gcc 14 -O3 false positive in boost random headers (-Wmaybe-uninitialized on the
+# boost::binomial_distribution ctor): disable that single warning for this
+# simulation-only translation unit (mechanism provided by cxxLibrary.cmake)
+set(starling_sim_test_COMPILE_FLAGS "-Wno-maybe-uninitialized")
+
 include(${THIS_CXX_LIBRARY_CMAKE})

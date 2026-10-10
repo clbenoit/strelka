@@ -34,7 +34,7 @@ endif ()
 
 macro (initBoostParams)
     # required boost libraries
-    set (THIS_BOOST_VERSION 1.58.0)
+    set (THIS_BOOST_VERSION 1.92.0)
     # note we default to alphabetical order here, except where boost libraries depend on
     # each other (timer->chrono)
     set (THIS_BOOST_COMPONENTS date_time filesystem program_options
@@ -208,7 +208,9 @@ if (NOT Boost_FOUND)
         endforeach ()
 
         # Include full path for bjam so that we don't depend on cwd in build user's PATH
-        set (BOOST_BJAM "${BOOST_SRC_DIR}/bjam")
+        # boost 1.92's bootstrap.sh builds the engine as `b2` (older releases produced `bjam`);
+        # both accept identical command-line arguments
+        set (BOOST_BJAM "${BOOST_SRC_DIR}/b2")
 
         set (BJAM_OPTIONS ${BJAM_OPTIONS} "link=static")
         if (WIN32)

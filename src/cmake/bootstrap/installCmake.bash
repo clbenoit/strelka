@@ -40,15 +40,15 @@ BUILD_DIR=${INSTALL_DIR}/build
 BIN_DIR=${INSTALL_DIR}/bin
 INCLUDE_DIR=${INSTALL_DIR}/include
 
-CMAKE_MAJOR=2
-CMAKE_MINOR=8
+CMAKE_MAJOR=3
+CMAKE_MINOR=31
 CMAKE_PATCH=12
-CMAKE_PATCH_MIN=12
+CMAKE_PATCH_MIN=10
 CMAKE_REQUIRED="$CMAKE_MAJOR.$CMAKE_MINOR.$CMAKE_PATCH_MIN"
 TARBALL_VERSION="$CMAKE_MAJOR.$CMAKE_MINOR.$CMAKE_PATCH"
 SCRIPT=`basename "$0"`
-SOURCE_TARBALL=${REDIST_DIR}/cmake-$TARBALL_VERSION.tar.bz2
-TARBALL_COMPRESSION=j
+SOURCE_TARBALL=${REDIST_DIR}/cmake-$TARBALL_VERSION.tar.gz
+TARBALL_COMPRESSION=z
 SOURCE_DIR=${BUILD_DIR}/cmake-$TARBALL_VERSION
 CMAKE_DIR=cmake-$CMAKE_MAJOR.$CMAKE_MINOR
 
@@ -65,7 +65,8 @@ if [[ "${AVAILABLE_CMAKE_VERSION}" =~ ^cmake\ version\ ([0-9]+)\.([0-9]+)\.([0-9
 fi
 
 OLD_CMAKE_VERSION=`${BIN_DIR}/cmake --version 2> /dev/null`;
-if [[ $OLD_CMAKE_VERSION == "cmake version $TARBALL_VERSION" ]] ; then
+# prefix match: cmake >= 3.0 prints extra lines after "cmake version X.Y.Z"
+if [[ $OLD_CMAKE_VERSION == "cmake version $TARBALL_VERSION"* ]] ; then
     ilog "cmake version \"$TARBALL_VERSION\" is already installed at ${BIN_DIR}/cmake"
     echo "${BIN_DIR}/cmake"
     exit 0

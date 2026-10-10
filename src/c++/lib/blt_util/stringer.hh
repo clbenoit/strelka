@@ -57,7 +57,7 @@ protected:
 template <typename T>
 struct stringer : public stringer_base
 {
-    stringer<T>()
+    stringer()
     {
         _scanstr=scan_string<T>();
         if (nullptr==_scanstr)
