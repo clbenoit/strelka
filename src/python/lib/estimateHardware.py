@@ -76,7 +76,7 @@ def getNodeRealCoreCount() :
 
         return cpuCount
     else:
-        raise EstException("Can't determine total physical cores available on OS: '%s'" (platform.system()))
+        raise EstException("Can't determine total physical cores available on OS: '%s'" % platform.system())
 
 
 
@@ -113,7 +113,7 @@ def getNodeHyperthreadCoreCount():
         import multiprocessing
         cpuCount = multiprocessing.cpu_count()
     else:
-        raise EstException("Can't determine total logical cores available on OS: '%s'" (platform.system()))
+        raise EstException("Can't determine total logical cores available on OS: '%s'" % platform.system())
 
     return cpuCount
 
@@ -163,7 +163,7 @@ def getNodeMemMb():
             totalMem += int(m)
         memMb = totalMem / (1024**2)
     else:
-        raise EstException("Can't determine total memory available on OS: '%s'" (platform.system()))
+        raise EstException("Can't determine total memory available on OS: '%s'" % platform.system())
 
     return memMb
 

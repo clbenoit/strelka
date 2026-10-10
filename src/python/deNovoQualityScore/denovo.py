@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 # Strelka - Small Variant Caller
 # Copyright (c) 2009-2018 Illumina, Inc.
@@ -27,7 +27,6 @@ import itertools
 import os
 import re
 import sys
-import distutils.spawn
 import multiprocessing
 import copy
 
@@ -36,9 +35,9 @@ import subprocess as sp
 import cyvcf2 as vcf
 import numpy as np
 
-# check for python 2.7
-if sys.version_info[:2] != (2, 7):
-    msg = "Python 2.7 is required for execution."  # pragma: no cover
+# check for python 3.8+
+if sys.version_info < (3, 8):
+    msg = "Python 3.8+ is required for execution."  # pragma: no cover
     raise ImportError(msg)  # pragma: no cover
 
 # constants
@@ -56,7 +55,7 @@ _sample_filter_name = 'FT'
 _mendel_conflict_name = 'ME'
 
 # upper limit for DQ score
-_max_score = np.float(100)
+_max_score = np.float64(100)
 
 # number of reported decimals for DQ score
 _default_dq_decimals = 1
@@ -206,7 +205,7 @@ def check_pedigree_input(pedigree, samples):
             raise ValueError(msg)
 
     # check if all pedigree sample names are referenced in the header
-    for k, v in pedigree.iteritems():
+    for k, v in pedigree.items():
         if v not in samples:
             msg = "Sample '{1}' for {0} missing in the input VCF.".format(k, v)
             raise ValueError(msg)
@@ -271,6 +270,15 @@ def add_denovo_vcf_header_lines(vf, dq_format=_dq_format, name=_name, version=_v
 
     if 'DQ' not in vf:
         vf.add_format_to_header(dq_format)
+    else:
+        # DQ scores are written with decimals: if the input header declares
+        # DQ with a non-Float type, strict parsers (htslib) reject the
+        # output. Re-declare the DQ FORMAT field as Float.
+        for line in vf.raw_header.splitlines():
+            if line.startswith('##FORMAT=') and '<ID=DQ,' in line and 'Type=Float' not in line:
+                vf.remove_header('DQ')
+                vf.add_format_to_header(dq_format)
+                break
 
     return vf
 
@@ -287,7 +295,7 @@ def denovo(in_vcf, pedigree, param=_default_params, out_vcf=None):
     param = check_param_input(param, vf_in.samples, pedigree)
 
     model_fun = _models[param['model']]
-    if param['model'] is 'dng':
+    if param['model'] == 'dng':
         prior = {}
         prior['auto'] = {
             'snv': reorder_prior(read_prior(_prior_paths['auto']['snv'], 'snv'), _full_gt_idx_snv),
@@ -372,8 +380,8 @@ def full_genotype_mapping(gtsu_idx):
     """Map trio sample genotypes to DNG indexing schema"""
 
     n = len(gtsu_idx)
-    full_idx = itertools.product(xrange(n), xrange(n), xrange(n))
-    idx_gtsu = {v: k for k, v in gtsu_idx.iteritems()}  # index->GT mapping
+    full_idx = itertools.product(range(n), range(n), range(n))
+    idx_gtsu = {v: k for k, v in gtsu_idx.items()}  # index->GT mapping
     full_gt = [
         "/".join([paste(idx_gtsu[k]), paste(idx_gtsu[j]), paste(idx_gtsu[i])])
         for i, j, k in full_idx
@@ -477,6 +485,10 @@ def read_prior(path, vartype):
         })
     prior = dict(zip(col_names, prior))
 
+    # numpy loadtxt returns the S8 'gt' column as bytes under python3:
+    # decode to str to match the genotype strings built by the DNG mapping.
+    prior['gt'] = np.char.decode(prior['gt'], 'ascii')
+
     prior['denovo_flag'].astype(bool)
 
     if vartype.lower() in 'snv':
@@ -503,10 +515,10 @@ def reorder_prior(prior, full_gt_idx):
     """Reorder imported prior to match the DNG genotype order"""
 
     p_gt = {g: i for i, g in enumerate(prior['gt'])}
-    idx_full_gt = {v: k for k, v in full_gt_idx.iteritems()}  # revert mapping
-    new_prior_ord = [p_gt[idx_full_gt[i]] for i in xrange(len(idx_full_gt))]
+    idx_full_gt = {v: k for k, v in full_gt_idx.items()}  # revert mapping
+    new_prior_ord = [p_gt[idx_full_gt[i]] for i in range(len(idx_full_gt))]
 
-    prior = {k: np.take(v, new_prior_ord, axis=0) for k, v in prior.iteritems()}
+    prior = {k: np.take(v, new_prior_ord, axis=0) for k, v in prior.items()}
 
     return prior
 
@@ -542,7 +554,7 @@ def allele_indices(alleles, genotype_index):
     """Return ordered indices for allele combinations for PL field"""
 
     indices = [genotype_index[alleles[j], alleles[i]]
-               for i in xrange(len(alleles)) for j in xrange(i + 1)]
+               for i in range(len(alleles)) for j in range(i + 1)]
 
     return indices
 
@@ -558,9 +570,9 @@ def build_PL_indices_lookup(alleles, genotype_index, ref=None):
             alleles, repeat=3),
         itertools.product(
             alleles, repeat=4))
-    alleles_comb = itertools.ifilter(
+    alleles_comb = filter(
         lambda x: len(set(x)) == min(len(x), n_uniq_alleles), alleles_comb)
-    alleles_comb = itertools.ifilter(lambda x: ref not in x[1:], alleles_comb)
+    alleles_comb = filter(lambda x: ref not in x[1:], alleles_comb)
     alleles_lookup = {
         alleles: allele_indices(alleles, genotype_index)
         for alleles in alleles_comb
@@ -733,13 +745,14 @@ def calculate_dng_DQ_snv(variant, prior, param):
 
     sample_index = param['sample_index']
 
-    if param['is_select_call']:
-        idx_trio = [_gts_gtsu_snv[variant.gt_bases[i]] for i in sample_index]
-        idx_pick = _full_gt_idx_snv['/'.join(idx_trio)]
-        if not prior['denovo_flag'][idx_pick]:
-            return 0.0
-
     try:
+        if param['is_select_call']:
+            # a missing genotype (e.g. './.') has no entry in the genotype
+            # lookup: treat it like any other unscorable variant
+            idx_trio = [_gts_gtsu_snv[variant.gt_bases[i]] for i in sample_index]
+            idx_pick = _full_gt_idx_snv['/'.join(idx_trio)]
+            if not prior['denovo_flag'][idx_pick]:
+                return 0.0
         pl = get_PL_field(variant)
         alleles = tuple([variant.REF] + variant.ALT)
         alleles_idx = get_PL_indices_snv(alleles)
@@ -800,7 +813,7 @@ def calculate_dng_DQ_indel(variant, prior, param):
 
     try:
         pl = get_PL_field(variant)
-        alleles = tuple(['R'] + ['V' for i in xrange(len(variant.ALT))])
+        alleles = tuple(['R'] + ['V' for i in range(len(variant.ALT))])
         alleles_idx = get_PL_indices_indel(alleles)
         C = map_sample_pl_indel(pl[sample_index[0]], alleles_idx)
         M = map_sample_pl_indel(pl[sample_index[1]], alleles_idx)
@@ -846,7 +859,7 @@ def calculate_dng_DQ_sv(variant, prior, param):
 
     try:
         pl = get_PL_field(variant)
-        alleles = tuple(['R'] + ['V' for i in xrange(len(variant.ALT))])
+        alleles = tuple(['R'] + ['V' for i in range(len(variant.ALT))])
         alleles_idx = get_PL_indices_indel(alleles)
         C = map_sample_pl_indel(pl[sample_index[0]], alleles_idx)
         M = map_sample_pl_indel(pl[sample_index[1]], alleles_idx)
@@ -897,7 +910,7 @@ def add_DQ_score_to_variant(variant, param, score,
         # if variant has no DQ format field yet
         # append the DQ score to the proband and 'missing' to all other samples
         fields[8] += ':' + _field_name
-        for i in xrange(param['n_samples']):
+        for i in range(param['n_samples']):
             field_value, field_index = \
                 select_sample_score(score, i, sample_index_child, decimals, null_value)
             fields[field_index] = fields[field_index] + ':' + field_value
@@ -1011,7 +1024,7 @@ def import_bed_regions(path, fieldnames=('contig', 'start', 'end', 'annotation')
                 coords = (int(entry['start']), int(entry['end']))
                 regions.setdefault(contig, list()).append(coords)
         # convert values from list to tuple
-        regions = {contig: tuple(coords) for contig, coords in regions.iteritems()}
+        regions = {contig: tuple(coords) for contig, coords in regions.items()}
     except (IOError, BaseException):
         regions = None
 
@@ -1032,7 +1045,7 @@ def is_in_regions(variant, regions=None, chrom=None):
     return False
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
 
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -1162,7 +1175,7 @@ if __name__ == '__main__':
             'python -E -s', __file__, args.proband, args.mother, args.father, 'body')
         cmd_unzip = "gunzip -cdf {}".format(
             args.in_vcf)
-        cmd_body = "parallel -j {} --header '(\#.*\n)*' --keep-order --pipe --no-notice {}".format(
+        cmd_body = "parallel -j {} --header '(\\#.*\n)*' --keep-order --pipe --no-notice {}".format(
             args.ncores, denovo_cmd)
 
         try:

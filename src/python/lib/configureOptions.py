@@ -153,7 +153,7 @@ class ConfigureWorkflowOptions(object) :
 
             # write options object back into full iniSections object:
             #
-            for k,v in vars(options).iteritems() :
+            for k,v in vars(options).items() :
                 if k == "isAllHelp" : continue
                 iniSections[primary_section][k] = v
 
