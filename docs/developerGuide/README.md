@@ -33,6 +33,7 @@ Strelka Developer Guide
   * [Unit tests](#unit-tests)
 * [IDE support](#ide-support)
   * [Clion](#clion)
+* [Non-regression quality gate (qa/)](#non-regression-quality-gate-qa)
 
 [//]: # (END automated TOC section, any edits will be overwritten on next source refresh)
 
@@ -431,3 +432,25 @@ A subset of code formatting settings which can be imported into Clion are availa
 `${STRELKA_REPO_PATH}/scratch/ideConfiguration/CLion/referenceCodeStyleSettings.xml`
 
 ..note that the automated `astyle` formatting settings still define the project defaults, the above configuration simply provides a starting point for CLion which is closer to the project's formatting norms.
+
+## Non-regression quality gate (qa/)
+
+Quality non-regression is enforced by a single-command, layered gate
+(`qa/validate.sh`) that writes a timestamped, self-hashed evidence report
+to `qa/evidence/` on every run (append-only register — a diff between two
+reports shows exactly which pinned inputs changed):
+
+    qa/validate.sh            # fast: compileall + unit tests + demo golden tests
+    qa/validate.sh --full     # + Py2/Py3 training parity (CP1/CP2/CP2b,
+                              #   reference tool chains; N/A consigné if absent)
+    qa/validate.sh --cp3      # + C++ scoring runs with the parity model JSONs
+                              #   + semantic check (variant-set parity)
+
+The golden baselines (pinned parity dataset, demo expected results
+including `expectedResultsGermline`, dependency lock files) and the frozen
+reference tool chains (pins + wheel checksums + from-scratch procedure)
+are documented in `qa/README.md`, which also carries the procedure:
+triggers (any change => gate before merge), periodic re-runs
+(ISO 15189 §8.2 / ISO 17025 7.8, tool chain health check) and the
+per-change quality record template (ISO 15189 §7.3/§7.5, ISO 27001
+A.5.9/A.8.25/A.8.30).
