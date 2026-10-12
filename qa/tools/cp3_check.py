@@ -24,8 +24,9 @@ For each VCF pair (py2-model run vs py3-model run), verify the non-regression
 criterion used at parity validation (scratch/parity/report.md, CP3):
 
   - variant SET parity: identical (CHROM, POS, REF, ALT) — the pass criterion
-  - score deltas: per variant, QUAL and every numeric FORMAT field
-    (SomaticEVS, GQ, GQX, ...) compared as floats — quantified, informational
+  - score deltas: per variant, QUAL, every numeric FORMAT field
+    (GQ, GQX, ...) and — for the somatic output, where the model score lives
+    in the last INFO field — `SomaticEVS=<qscore>`: max/mean delta quantified
 
 Exit code 0 iff every pair has identical variant sets.
 
@@ -35,11 +36,14 @@ Usage:
 
 import argparse
 import gzip
+import re
 import sys
+
+_SOMATIC_EVS = re.compile(r"SomaticEVS=([0-9.]+)")
 
 
 def read_variants(path):
-    """Return { (chrom,pos,ref,alt): (qual, [format_values_per_sample]) }."""
+    """Return { (chrom,pos,ref,alt): (qual, [format_values_per_sample], somatic_evs) }."""
     variants = {}
     opener = gzip.open if path.endswith(".gz") else open
     with opener(path, "rt") as fid:
@@ -53,9 +57,11 @@ def read_variants(path):
             fields = line.rstrip("\n").split("\t")
             key = (fields[0], fields[1], fields[3], fields[4])
             qual = fields[5]
+            match = _SOMATIC_EVS.search(fields[7])
+            evs = float(match.group(1)) if match else None
             fmt_idx = header.index("FORMAT") if "FORMAT" in header else 8
             samples = fields[fmt_idx + 1:]
-            variants[key] = (qual, samples)
+            variants[key] = (qual, samples, evs)
     return variants
 
 
@@ -92,9 +98,10 @@ def compare_pair(label, path_a, path_b):
 
     changed = 0
     max_delta = 0.0
+    evs_deltas = []
     for key in common:
-        qual_a, samp_a = va[key]
-        qual_b, samp_b = vb[key]
+        qual_a, samp_a, evs_a = va[key]
+        qual_b, samp_b, evs_b = vb[key]
         try:
             delta = abs(float(qual_a) - float(qual_b))
             if delta > 0:
@@ -109,8 +116,16 @@ def compare_pair(label, path_a, path_b):
             if d > 0:
                 changed += 1
             max_delta = max(max_delta, d)
+        if evs_a is not None and evs_b is not None:
+            evs_deltas.append(abs(evs_a - evs_b))
+    extra = ""
+    if evs_deltas:
+        extra = ("; SomaticEVS max d %.2f / mean d %.2f (%d/%d)"
+                 % (max(evs_deltas), sum(evs_deltas) / len(evs_deltas),
+                    len(evs_deltas), len(common)))
     return ("%d/%d variants identical; %d score fields changed "
-            "(max |d| %.2f)" % (len(common), len(va), changed, max_delta),
+            "(max |d| %.2f)%s" % (len(common), len(va), changed,
+                                  max_delta, extra),
             True)
 
 
