@@ -134,7 +134,14 @@ fixe (`demo20`, BAM NA12891/NA12892), modèles JSON_2 / JSON_3 passés via
   l'identité m2/m3 observée en mode exome (0/19) est triviale.
 * `compareStrelka{Somatic,Germline}Vcfs.bash` : diffs conservés dans
   `results/cp3-*.diff` (uniquement les valeurs de scores, aucun diff
-  d'appel).
+  d'appel). *Lecture des diffs (note 2026-10-12, change
+  `strelka-qa-noregression`)* : la vue des scripts de comparaison est
+  **filtrée `grep PASS`** — `cp3-somatic-snvs.diff` montre donc
+  variantLineCount 13 (m2) / 10 (m3), alors que le **set d'appels brut est
+  17/17 identiques** (aucun appel créé/retrait) : 3 variants (1706, 2512,
+  3366) restent appelées en m3 avec un passage de FILTER PASS→LowEVS
+  (SomaticEVS 17.66→13.98 / 16.89→13.98 / 21.47→20.00). Les 2 vues sont
+  cohérentes ; le critère d'acceptation porte sur le set d'appels brut.
 
 **Tolérance (décision clinique — consignée)** : les écarts de Q-scores
 observés (somatic SNV max Δ14.21 / mean Δ2.54 ; germline GQX Δ1) sont la

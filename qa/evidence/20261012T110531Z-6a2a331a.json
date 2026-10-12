@@ -1,0 +1,133 @@
+{
+  "environment": {
+    "boost": "109200",
+    "cmake": "cmake version 3.31.12",
+    "gcc": "gcc (Debian 14.2.0-19) 14.2.0",
+    "git_branch": "openspec/strelka-qa-noregression",
+    "git_dirty_files": "2",
+    "git_sha": "6a2a331a",
+    "install_tree": "present",
+    "py2_ref_tree_sha": "2cf5f0fcdad70550bee660243ab31173509ef98c",
+    "python3": "Python 3.13.5",
+    "toolchain_py2": "Python 2.7.18",
+    "toolchain_py3_env": "present"
+  },
+  "generated_utc": "2026-10-12T11:06:07Z",
+  "git_sha": "6a2a331a",
+  "level": "cp3",
+  "pinned_inputs": {
+    "redist": "1696bb13b46532ba80aac17e61be4b5041696d4972f881a9b9bfd6288b99c4b9 (aggregate)",
+    "requirements-training.txt": "4280f1c0670ae7e5d0ed239d881b3cda1d270bc919a83273bb01bd28bc68d08f",
+    "scratch/parity/checksums.sha256": "47080d77f1c6684b25fae8b052449234a77344bc0c27b2ce383c435cc1bfeaf5",
+    "src/demo/expectedResults": "b6ed9eefa7a1773f14a4c43350ddd58b16e349ae6cf9d303935263249d056521 (aggregate)",
+    "src/demo/expectedResultsGermline": "bd4b2b315aaebf529366c1a7ff1092b9f7398918cb6cdccd1f55d90df0bd07b0 (aggregate)"
+  },
+  "result": "PASS",
+  "stamp": "20261012T110531Z-6a2a331a",
+  "steps": [
+    {
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "name": "compileall_training",
+      "rc": 0,
+      "result": ""
+    },
+    {
+      "log_sha256": "ad50bd66a9ff7cb732d336f74a6ecc93131bc3294dec7536905daf0bb78e8886",
+      "name": "unittest_training",
+      "rc": 0,
+      "result": "Ran 10 tests in 0.731s"
+    },
+    {
+      "log_sha256": "d7ba9b3dbe762ad4cb2bc9f3b16cdca2b3e80b861ae4d0fa618e9829a02cc154",
+      "name": "baseline_checksums",
+      "rc": 0,
+      "result": "83/83 files re-verified"
+    },
+    {
+      "log_sha256": "34b57b53f51e5afdc61acda6776312d1de2edcf5ed479b4f9c1856ed0b88259f",
+      "name": "demo_somatic",
+      "rc": 0,
+      "result": "**** No differences between expected and computed results."
+    },
+    {
+      "log_sha256": "3ad06e3673d07dd51a751d08e1cfdf8da1dab3446a9144ae1cac9dde729c3a7f",
+      "name": "demo_germline",
+      "rc": 0,
+      "result": "**** Demo/verification successfully completed"
+    },
+    {
+      "log_sha256": "8b4f0250e42ba93234e77c6d152542d14b12b79ec2d963d89389e064e51e901a",
+      "name": "demo_germline_golden",
+      "rc": 0,
+      "result": "4/4 germline files: no differences (variable metadata filtered)"
+    },
+    {
+      "log_sha256": "eedb85ab90d324a555a45560d75c88cecf23721990c3b6353697d707e6465c74",
+      "name": "parity_ref_tree",
+      "rc": 0,
+      "result": "39"
+    },
+    {
+      "log_sha256": "920c3548be685142090a2bf3b1e714db33a1b0c31b90aba25ceabf408f9b476d",
+      "name": "parity_py2_chain",
+      "rc": 0,
+      "result": "somatic indel export rc=1 (expected: non-zero, pre-existing)"
+    },
+    {
+      "log_sha256": "27dce45f306f19fbe2587663499b452e369c8747bd58247e40faed222f2103c2",
+      "name": "parity_py3_chain",
+      "rc": 0,
+      "result": "somatic indel export rc=1 (expected: non-zero, pre-existing)"
+    },
+    {
+      "log_sha256": "1aa741cf995eacc04233636a3698412112744d87e34da6e7292e54a7c43296de",
+      "name": "parity_cp1",
+      "rc": 0,
+      "result": "6/6 files byte-identical"
+    },
+    {
+      "log_sha256": "57833f77f0e4263eceb69da5bb87a244ad06cc692cbc6d1a89f7617826301db5",
+      "name": "parity_cp2",
+      "rc": 0,
+      "result": "trees structurally identical (same children + split features) : 9/100"
+    },
+    {
+      "log_sha256": "fd2804fcf63f34cea7767c53e91d718d14bce28a38769d929967def6056ef686",
+      "name": "parity_cp2b",
+      "rc": 0,
+      "result": "somatic_snv: 67/67 ptag, max|dP(TP)| 0.0723 ; germline_snv: 51/51 ptag, max|dP(TP)| 0.0577 ; germline_indel: 12/12 ptag, max|dP(TP)| 0.0850"
+    },
+    {
+      "log_sha256": "bbe6d424f24538e935ee2f56d73a7da92c4401f0f9997bcb25bc62af3cfc8c4a",
+      "name": "cp3_somatic_m2",
+      "rc": 0,
+      "result": ""
+    },
+    {
+      "log_sha256": "1465f964eb3e713ff412fa3bf601466bc91d91df07e1782b93c92764f154f8ca",
+      "name": "cp3_somatic_m3",
+      "rc": 0,
+      "result": ""
+    },
+    {
+      "log_sha256": "abe742c456a66f9dce65a12661592348153e84ca49fe35e3bc9dcc412dec6596",
+      "name": "cp3_germline_m2",
+      "rc": 0,
+      "result": ""
+    },
+    {
+      "log_sha256": "6c5c9a0ed10f3cc4f0ce19e04feb3165762092944cdcb346d9b535a2fc243081",
+      "name": "cp3_germline_m3",
+      "rc": 0,
+      "result": ""
+    },
+    {
+      "log_sha256": "66e1bceca76a0720185e80ac36781ddab953bd126f9d45a95e0efba5a49620e1",
+      "name": "cp3_check",
+      "rc": 0,
+      "result": "somatic.snvs: 17/17 variants identical; 0 score fields changed (max |d| 0.00); SomaticEVS max d 14.21 / mean d 2.54 (17/17) ; somatic.indels: 2/2 variants identical; 0 score fields changed (max |d| 0.00); SomaticEVS max d 0.00 / mean d 0.00 (2/2) ; germline: 19/19 variants identical; 1 score fields changed (max |d| 1.00)"
+    }
+  ],
+  "steps_failed": [],
+  "steps_na": []
+}
