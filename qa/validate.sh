@@ -66,6 +66,7 @@ FULL=0
 CP3=0
 KEEP_WORK=0
 INSTALL_DIR="$ROOT/install"
+INSTALL_EXPLICIT=0
 
 usage() {
     cat <<'EOF'
@@ -88,12 +89,25 @@ while [ $# -gt 0 ]; do
         --full) FULL=1 ;;
         --cp3) CP3=1; FULL=1 ;;
         --keep-work) KEEP_WORK=1 ;;
-        --install) INSTALL_DIR=$2; shift ;;
+        --install) INSTALL_DIR=$2; INSTALL_EXPLICIT=1; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown argument: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
 done
+# normalize the install tree to an absolute path: the steps cd into a temp
+# work dir before invoking install paths, so a relative --install would not
+# resolve there (observed: env: '../install/...': No such file or directory,
+# rc 127 — medfront109, 2026-10-13).
+if [ $INSTALL_EXPLICIT -eq 1 ]; then
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo "error: install tree not found: $INSTALL_DIR (try --install <dir>)" >&2
+        exit 2
+    fi
+    INSTALL_DIR=$(cd "$INSTALL_DIR" && pwd)
+elif [ -d "$INSTALL_DIR" ]; then
+    INSTALL_DIR=$(cd "$INSTALL_DIR" && pwd)
+fi
 if [ $CP3 -eq 1 ]; then
     LEVEL=cp3
 elif [ $FULL -eq 1 ]; then
@@ -176,9 +190,13 @@ step compileall_training - \
     python3 -m compileall -q "$PY3_TREE"
 # no output on success: the log being empty + rc 0 is the result
 
-step unittest_training '^(Ran|OK|FAILED)' bash -c \
-    'cd "$1" && env PYTHONPATH="${2:-}" python3 -m unittest discover -s . -t . -v' \
-    _ "$PY3_TREE/tests" "$PY3_PKGS"
+if [ -n "$PY3_PKGS" ] && [ -d "$PY3_PKGS" ]; then
+    step unittest_training '^(Ran|OK|FAILED)' bash -c \
+        'cd "$1" && env PYTHONPATH="${2:-}" python3 -m unittest discover -s . -t . -v' \
+        _ "$PY3_TREE/tests" "$PY3_PKGS"
+else
+    step_na unittest_training "pinned training packages absent (STRELKA_QA_PY3_PKGS) — the training module is a repo toolchain, not part of the install runtime"
+fi
 
 step baseline_checksums 'files re-verified' bash -c \
     'cd "$1" && n=$(grep -c "" checksums.sha256) && sha256sum -c checksums.sha256 && echo "$n/$n files re-verified"' \
