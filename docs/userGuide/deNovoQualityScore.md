@@ -14,7 +14,7 @@ integrated into Strelka and therefore requires additional package requirements a
 
 The de novo quality score calculation script, `denovo.py` has the following requirements:
 
-* python 3.8+
+* python 3.10+
 * numpy >= 1.21.2
 * cyvcf2 >= 0.30.9
 
@@ -187,7 +187,7 @@ The [`Dockerfile`](../../src/python/deNovoQualityScore/Dockerfile) creates a con
 
 #### Install Requirements
 
-* `python 3.8+`
+* `python 3.10+`
 * `numpy`
 * `cyvcf2`
 

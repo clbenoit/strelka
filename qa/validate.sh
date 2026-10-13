@@ -197,10 +197,51 @@ if has_install; then
         echo "$n/$n germline files: no differences (variable metadata filtered)"' \
         _ "$ROOT/src/demo/expectedResultsGermline" \
           "$WORK/demo-germline/strelkaGermlineDemoAnalysis/results/variants"
+
+    # ---------------- python3 compatibility matrix (change
+    # strelka-pyflow-py3-threading-fix): the vendored pyflow 1.1.20
+    # collides with CPython 3.8-3.12 private names pre-fix (StoppableThread
+    # self._stop shadows Thread._stop()); the matrix proves the fix on
+    # pinned interpreters, N/A consigné when one is absent.
+    step py3_smoke_native 'pyflow threading smoke: OK' bash -c \
+        'python3 "$1" "$2"' \
+        _ "$ROOT/qa/tools/pyflow_threading_smoke.py" "$INSTALL_DIR"
+    for spec in "3.10:PY310_BIN" "3.11:PY311_BIN" "3.12:PY312_BIN"; do
+        ver=${spec%%:*}; var=${spec##*:}
+        pybin=${!var}
+        sname=py3_smoke_${ver//./}
+        if [ -n "$pybin" ] && [ -x "$pybin" ]; then
+            step $sname 'pyflow threading smoke: OK' bash -c \
+                '"$1" "$2" "$3"' _ "$pybin" \
+                "$ROOT/qa/tools/pyflow_threading_smoke.py" "$INSTALL_DIR"
+        else
+            step_na $sname "python $ver interpreter absent (STRELKA_QA_${var})"
+        fi
+    done
+    if [ -n "${PY312_BIN:-}" ] && [ -x "$PY312_BIN" ]; then
+        mkdir -p "$WORK/demo312-somatic" "$WORK/demo312-germline"
+        step py312_demo_somatic 'No differences between expected' bash -c '
+            cd "$1" && env PATH="$(dirname "$3"):$2/bin:$PATH" \
+                "$2/bin/runStrelkaSomaticWorkflowDemo.bash"' \
+            _ "$WORK/demo312-somatic" "$INSTALL_DIR" "$PY312_BIN"
+        step py312_demo_germline 'Demo/verification successfully completed' bash -c '
+            cd "$1" && env PATH="$(dirname "$3"):$2/bin:$PATH" \
+                "$2/bin/runStrelkaGermlineWorkflowDemo.bash"' \
+            _ "$WORK/demo312-germline" "$INSTALL_DIR" "$PY312_BIN"
+    else
+        step_na py312_demo_somatic "python 3.12 interpreter absent (STRELKA_QA_PY312_BIN)"
+        step_na py312_demo_germline "python 3.12 interpreter absent (STRELKA_QA_PY312_BIN)"
+    fi
 else
     step_na demo_somatic "install tree absent ($INSTALL_DIR)"
     step_na demo_germline "install tree absent ($INSTALL_DIR)"
     step_na demo_germline_golden "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_native "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_310 "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_311 "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_312 "install tree absent ($INSTALL_DIR)"
+    step_na py312_demo_somatic "install tree absent ($INSTALL_DIR)"
+    step_na py312_demo_germline "install tree absent ($INSTALL_DIR)"
 fi
 
 # ----------------------------------------------------------- full (parity) layer

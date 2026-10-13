@@ -24,9 +24,9 @@ This script configures the Strelka somatic small variant calling workflow
 
 import os,sys
 
-if sys.version_info < (3,8):
+if sys.version_info < (3,10):
     import platform
-    raise Exception("Strelka requires python 3.8+ (version %s detected)" % (platform.python_version()))
+    raise Exception("Strelka requires python 3.10+ (version %s detected)" % (platform.python_version()))
 
 
 scriptDir=os.path.abspath(os.path.dirname(__file__))

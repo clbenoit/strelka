@@ -51,6 +51,26 @@ pytz 2026.5, tzdata 2026.5, six 1.17.0 — pandas reste 2.3.3 :
 `/workspace/.opencode/state/training-py3-packages`, variable
 `STRELKA_QA_PY3_PKGS`).
 
+### py3 — interpreters de la matrice de compatibilité (uv, pinnés)
+Change `strelka-pyflow-py3-threading-fix` : le pyflow vendé (1.1.20)
+collidait avec les names privés de CPython 3.8–3.12
+(`StoppableThread.self._stop` éclipse la méthode `Thread._stop()`). La
+couche fast exécute désormais un test de régression
+(`qa/tools/pyflow_threading_smoke.py`) et les démos sous des
+interpreters pinnés pour couvrir la gamme supportée (3.10–3.13) :
+
+| interpréteur | version | installation | variable |
+|---|---|---|---|
+| 3.10 | 3.10.22 | `uv python install 3.10` | `STRELKA_QA_PY310_BIN` |
+| 3.11 | 3.11.17 | `uv python install 3.11` | `STRELKA_QA_PY311_BIN` |
+| 3.12 | 3.12.14 | `uv python install 3.12` | `STRELKA_QA_PY312_BIN` |
+
+Défauts = auto-détection des interpreters uv du conteneur
+(`/workspace/.opencode/state/uv/python/cpython-3.1X*/bin/python3`) ;
+si un interpréteur est absent l'étape concernée est consignée
+`N/A (explicit)` (jamais de silence). L'interpréteur natif du
+conteneur (3.13.5) couvre le haut de la gamme.
+
 ### py2 — toolchain de référence (gelée, re-constituible from-scratch)
 État du conteneur de build, **pas** du code versionné ; re-jeu vérifié le
 2026-10-10 (source : change archivé `2026-10-10-strelka-py3-training`,
@@ -116,7 +136,7 @@ qa/validate.sh --install DIR --keep-work
 
 | couche | étapes | critère de FAIL |
 |---|---|---|
-| fast | `compileall_training` (module `scoringModelTraining`) · `unittest_training` (suite `tests/`) · `baseline_checksums` (re-jeu `scratch/parity/checksums.sha256`) · `demo_somatic` (script installé vs `expectedResults`, comparaison native step 3 du script) · `demo_germline` (script installé) + `demo_germline_golden` (comparaison par la porte vs `expectedResultsGermline`, métadonnées variables filtrées) | rc ≠ 0 de n'importe quelle étape |
+| fast | `compileall_training` (module `scoringModelTraining`) · `unittest_training` (suite `tests/`) · `baseline_checksums` (re-jeu `scratch/parity/checksums.sha256`) · `demo_somatic` (script installé vs `expectedResults`, comparaison native step 3 du script) · `demo_germline` (script installé) + `demo_germline_golden` (comparaison par la porte vs `expectedResultsGermline`, métadonnées variables filtrées)  · **matrice python3** : `py3_smoke_native` + `py3_smoke_310/311/312` (`qa/tools/pyflow_threading_smoke.py` sur le pyflow installé) + `py312_demo_somatic` / `py312_demo_germline` (demos sous l'interpréteur 3.12 pinné — la version qui crashait pré-fix) | rc ≠ 0 de n'importe quelle étape (N/A explicite si un interpréteur pinné est absent) |
 | full | `parity_ref_tree` (matérialisation `git archive` du SHA pinné) · `parity_py2_chain` + `parity_py3_chain` (`scratch/parity/tools/run_chain.sh`, dataset pinné) · `parity_cp1` (6 CSV/VCF **byte-identiques** — critère) · `parity_cp2` (analyse arbres sklearn, `compare_models.py` — quantifié, informationnel) · `parity_cp2b` (P(TP) par variante avec le modèle de chaque toolchain, `score_check.py` — quantifié, informationnel) | FAIL si une chaîne échoue ou CP1 diverge ; CP2/CP2b rapportent les écarts (les divergences d'arbres sklearn 0.19→1.9 sont attendues et documentées dans `scratch/parity/report.md` — la décision clinique porte sur ces mesures) |
 | cp3 | `cp3_somatic_m2/m3` + `cp3_germline_m2/m3` (runs C++ complets, modèles JSON_2/JSON_3 via `--{snv,indel}ScoringModelFile`, démo20 ; germline en **mode génome** — `--exome` force `isEVS=False` pré-existant) · `cp3_check` (**variant-set identique** = critère ; deltas de scores quantifiés) | FAIL si une variante est créée/retraitée ; les deltas Q-scores sont consignés dans la ligne de résultat |
 
@@ -125,10 +145,11 @@ absente, install tree absent…) n'est jamais silencieuse — le rapport porte
 `N/A (explicit)` + la raison (ex. « py2 reference tool chain absent »).
 
 Variables d'env : `STRELKA_QA_PY2_BIN`, `STRELKA_QA_PY2_LIB`,
-`STRELKA_QA_PY2_PKGS`, `STRELKA_QA_PY3_PKGS`, `STRELKA_QA_PY2_TREE_SHA`
+`STRELKA_QA_PY2_PKGS`, `STRELKA_QA_PY3_PKGS`, `STRELKA_QA_PY2_TREE_SHA`,
+`STRELKA_QA_PY310_BIN`, `STRELKA_QA_PY311_BIN`, `STRELKA_QA_PY312_BIN`
 (défauts = localisations container, voir haut).
 
-Coût d'exécution (container, 16 cœurs) : fast ≈ 10 min (2 démos) ; `--full`
+Coût d'exécution (container, 16 cœurs) : fast ≈ 15 min (2 démos + matrice python3 : 2 démos sous 3.12 + smokes) ; `--full`
 ≈ +15 min (chaînes ×2) ; `--cp3` ≈ +15 min (4 runs C++).
 
 ## Registre de preuves (`qa/evidence/`)
