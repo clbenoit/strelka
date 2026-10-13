@@ -25,6 +25,10 @@
 #   fast (default)  : compileall + unittest + baseline checksums
 #                     + caller golden tests (somatic/germline demos vs
 #                     expectedResults, via the installed demo scripts)
+#                     + python3 compatibility matrix (pyflow threading
+#                       smoke on pinned 3.10/3.11/3.12 interpreters +
+#                       demos under 3.12; N/A consigné when an interpreter
+#                       is absent, never silent)
 #   --full          : + Py2/Py3 parity CP1/CP2/CP2b (reference tool chains;
 #                     each layer consigné N/A when its tool chain is absent,
 #                     never silent)
@@ -43,6 +47,11 @@
 #   STRELKA_QA_PY2_TREE_SHA  2cf5f0fcdad70550bee660243ab31173509ef98c
 #        (python3 @ pre-merge of change 3 = unconverted training tree,
 #         materialized with `git archive`; see qa/README.md)
+#   STRELKA_QA_PY310_BIN  /workspace/.opencode/state/uv/python/cpython-3.10*/bin/python3
+#   STRELKA_QA_PY311_BIN  /workspace/.opencode/state/uv/python/cpython-3.11*/bin/python3
+#   STRELKA_QA_PY312_BIN  /workspace/.opencode/state/uv/python/cpython-3.12*/bin/python3
+#        (python3 compatibility matrix; uv-managed interpreters, see
+#         qa/README.md)
 #
 # Procedure, triggers and norm mapping: qa/README.md.
 
@@ -57,6 +66,7 @@ FULL=0
 CP3=0
 KEEP_WORK=0
 INSTALL_DIR="$ROOT/install"
+INSTALL_EXPLICIT=0
 
 usage() {
     cat <<'EOF'
@@ -64,6 +74,8 @@ qa/validate.sh [--full] [--cp3] [--install DIR] [--keep-work]
 
   (no option)  fast: compileall + unittest + baseline checksums
                + caller golden tests (demos vs expectedResults)
+               + python3 compatibility matrix (pyflow threading smoke +
+                 demos under pinned 3.10/3.11/3.12, N/A if absent)
   --full       + Py2/Py3 parity CP1/CP2/CP2b (N/A consigné if tool chains
                absent)
   --cp3        + C++ scoring runs with the parity model JSONs + semantic
@@ -77,12 +89,25 @@ while [ $# -gt 0 ]; do
         --full) FULL=1 ;;
         --cp3) CP3=1; FULL=1 ;;
         --keep-work) KEEP_WORK=1 ;;
-        --install) INSTALL_DIR=$2; shift ;;
+        --install) INSTALL_DIR=$2; INSTALL_EXPLICIT=1; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "unknown argument: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
 done
+# normalize the install tree to an absolute path: the steps cd into a temp
+# work dir before invoking install paths, so a relative --install would not
+# resolve there (observed: env: '../install/...': No such file or directory,
+# rc 127 — medfront109, 2026-10-13).
+if [ $INSTALL_EXPLICIT -eq 1 ]; then
+    if [ ! -d "$INSTALL_DIR" ]; then
+        echo "error: install tree not found: $INSTALL_DIR (try --install <dir>)" >&2
+        exit 2
+    fi
+    INSTALL_DIR=$(cd "$INSTALL_DIR" && pwd)
+elif [ -d "$INSTALL_DIR" ]; then
+    INSTALL_DIR=$(cd "$INSTALL_DIR" && pwd)
+fi
 if [ $CP3 -eq 1 ]; then
     LEVEL=cp3
 elif [ $FULL -eq 1 ]; then
@@ -96,6 +121,9 @@ PY2_LIB=${STRELKA_QA_PY2_LIB:-/workspace/.opencode/state/ref-py27/lib}
 PY2_PKGS=${STRELKA_QA_PY2_PKGS:-/workspace/.opencode/state/ref-py27-packages}
 PY3_PKGS=${STRELKA_QA_PY3_PKGS:-/workspace/.opencode/state/training-py3-packages}
 PY2_TREE_SHA=${STRELKA_QA_PY2_TREE_SHA:-2cf5f0fcdad70550bee660243ab31173509ef98c}
+PY310_BIN=${STRELKA_QA_PY310_BIN:-$(ls /workspace/.opencode/state/uv/python/cpython-3.10*/bin/python3 2>/dev/null | head -1)}
+PY311_BIN=${STRELKA_QA_PY311_BIN:-$(ls /workspace/.opencode/state/uv/python/cpython-3.11*/bin/python3 2>/dev/null | head -1)}
+PY312_BIN=${STRELKA_QA_PY312_BIN:-$(ls /workspace/.opencode/state/uv/python/cpython-3.12*/bin/python3 2>/dev/null | head -1)}
 
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 GITSHA=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo nogit)
@@ -162,9 +190,13 @@ step compileall_training - \
     python3 -m compileall -q "$PY3_TREE"
 # no output on success: the log being empty + rc 0 is the result
 
-step unittest_training '^(Ran|OK|FAILED)' bash -c \
-    'cd "$1" && env PYTHONPATH="${2:-}" python3 -m unittest discover -s . -t . -v' \
-    _ "$PY3_TREE/tests" "$PY3_PKGS"
+if [ -n "$PY3_PKGS" ] && [ -d "$PY3_PKGS" ]; then
+    step unittest_training '^(Ran|OK|FAILED)' bash -c \
+        'cd "$1" && env PYTHONPATH="${2:-}" python3 -m unittest discover -s . -t . -v' \
+        _ "$PY3_TREE/tests" "$PY3_PKGS"
+else
+    step_na unittest_training "pinned training packages absent (STRELKA_QA_PY3_PKGS) — the training module is a repo toolchain, not part of the install runtime"
+fi
 
 step baseline_checksums 'files re-verified' bash -c \
     'cd "$1" && n=$(grep -c "" checksums.sha256) && sha256sum -c checksums.sha256 && echo "$n/$n files re-verified"' \
@@ -197,10 +229,51 @@ if has_install; then
         echo "$n/$n germline files: no differences (variable metadata filtered)"' \
         _ "$ROOT/src/demo/expectedResultsGermline" \
           "$WORK/demo-germline/strelkaGermlineDemoAnalysis/results/variants"
+
+    # ---------------- python3 compatibility matrix (change
+    # strelka-pyflow-py3-threading-fix): the vendored pyflow 1.1.20
+    # collides with CPython 3.8-3.12 private names pre-fix (StoppableThread
+    # self._stop shadows Thread._stop()); the matrix proves the fix on
+    # pinned interpreters, N/A consigné when one is absent.
+    step py3_smoke_native 'pyflow threading smoke: OK' bash -c \
+        'python3 "$1" "$2"' \
+        _ "$ROOT/qa/tools/pyflow_threading_smoke.py" "$INSTALL_DIR"
+    for spec in "3.10:PY310_BIN" "3.11:PY311_BIN" "3.12:PY312_BIN"; do
+        ver=${spec%%:*}; var=${spec##*:}
+        pybin=${!var}
+        sname=py3_smoke_${ver//./}
+        if [ -n "$pybin" ] && [ -x "$pybin" ]; then
+            step $sname 'pyflow threading smoke: OK' bash -c \
+                '"$1" "$2" "$3"' _ "$pybin" \
+                "$ROOT/qa/tools/pyflow_threading_smoke.py" "$INSTALL_DIR"
+        else
+            step_na $sname "python $ver interpreter absent (STRELKA_QA_${var})"
+        fi
+    done
+    if [ -n "${PY312_BIN:-}" ] && [ -x "$PY312_BIN" ]; then
+        mkdir -p "$WORK/demo312-somatic" "$WORK/demo312-germline"
+        step py312_demo_somatic 'No differences between expected' bash -c '
+            cd "$1" && env PATH="$(dirname "$3"):$2/bin:$PATH" \
+                "$2/bin/runStrelkaSomaticWorkflowDemo.bash"' \
+            _ "$WORK/demo312-somatic" "$INSTALL_DIR" "$PY312_BIN"
+        step py312_demo_germline 'Demo/verification successfully completed' bash -c '
+            cd "$1" && env PATH="$(dirname "$3"):$2/bin:$PATH" \
+                "$2/bin/runStrelkaGermlineWorkflowDemo.bash"' \
+            _ "$WORK/demo312-germline" "$INSTALL_DIR" "$PY312_BIN"
+    else
+        step_na py312_demo_somatic "python 3.12 interpreter absent (STRELKA_QA_PY312_BIN)"
+        step_na py312_demo_germline "python 3.12 interpreter absent (STRELKA_QA_PY312_BIN)"
+    fi
 else
     step_na demo_somatic "install tree absent ($INSTALL_DIR)"
     step_na demo_germline "install tree absent ($INSTALL_DIR)"
     step_na demo_germline_golden "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_native "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_310 "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_311 "install tree absent ($INSTALL_DIR)"
+    step_na py3_smoke_312 "install tree absent ($INSTALL_DIR)"
+    step_na py312_demo_somatic "install tree absent ($INSTALL_DIR)"
+    step_na py312_demo_germline "install tree absent ($INSTALL_DIR)"
 fi
 
 # ----------------------------------------------------------- full (parity) layer

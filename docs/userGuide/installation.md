@@ -50,13 +50,13 @@ be found in the [developer guide][developerGuide].
 A C++11 compiler is required. These are the current minimum compiler versions enforced
 by the build system:
 
-* python 3.8+
+* python 3.10+
 * gcc 4.8+ OR clang 3.2+ (OR Visual Studio 2013+, see windows note below)
 * libz (including headers)
 
 ### Runtime prerequisites
 
-* python 3.8+
+* python 3.10+
 
 ### Operating System Guidelines
 

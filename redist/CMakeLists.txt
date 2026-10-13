@@ -218,6 +218,12 @@ add_custom_target(${THIS_CODEMIN} DEPENDS "${CODEMIN_MARK}")
 #
 
 set(PYFLOW_PREFIX "pyflow-1.1.20")
+# py3fix (change strelka-pyflow-py3-threading-fix): the vendored pyflow
+# 1.1.20 collided with CPython 3.8-3.12 private names (StoppableThread
+# self._stop shadows Thread._stop()). The patched tarball renames the
+# attribute to self._stopEvent; the original upstream tarball is kept in
+# this directory for provenance.
+set(PYFLOW_TARBALL "pyflow-1.1.20-py3fix.tar.bz2")
 set(PYFLOW_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PYFLOW_PREFIX}")
 set(PYFLOW_SCRIPT "${PYFLOW_DIR}/src/pyflow.py")
 
@@ -225,7 +231,7 @@ set (PYFLOW_DEPENDS "${PYFLOW_SCRIPT}")
 add_custom_command(
     OUTPUT ${PYFLOW_SCRIPT}
     COMMAND ${CMAKE_COMMAND} -E remove_directory "${PYFLOW_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E tar xjf "${THIS_REDIST_DIR}/${PYFLOW_PREFIX}.tar.bz2"
+    COMMAND ${CMAKE_COMMAND} -E tar xjf "${THIS_REDIST_DIR}/${PYFLOW_TARBALL}"
     COMMAND ${CMAKE_COMMAND} -E remove -f "${PYFLOW_DIR}/src/__init__.py"
     COMMENT "Unpacking pyflow")
 

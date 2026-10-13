@@ -35,9 +35,9 @@ import subprocess as sp
 import cyvcf2 as vcf
 import numpy as np
 
-# check for python 3.8+
-if sys.version_info < (3, 8):
-    msg = "Python 3.8+ is required for execution."  # pragma: no cover
+# check for python 3.10+
+if sys.version_info < (3, 10):
+    msg = "Python 3.10+ is required for execution."  # pragma: no cover
     raise ImportError(msg)  # pragma: no cover
 
 # constants
