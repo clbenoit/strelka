@@ -25,6 +25,10 @@
 #   fast (default)  : compileall + unittest + baseline checksums
 #                     + caller golden tests (somatic/germline demos vs
 #                     expectedResults, via the installed demo scripts)
+#                     + python3 compatibility matrix (pyflow threading
+#                       smoke on pinned 3.10/3.11/3.12 interpreters +
+#                       demos under 3.12; N/A consigné when an interpreter
+#                       is absent, never silent)
 #   --full          : + Py2/Py3 parity CP1/CP2/CP2b (reference tool chains;
 #                     each layer consigné N/A when its tool chain is absent,
 #                     never silent)
@@ -43,6 +47,11 @@
 #   STRELKA_QA_PY2_TREE_SHA  2cf5f0fcdad70550bee660243ab31173509ef98c
 #        (python3 @ pre-merge of change 3 = unconverted training tree,
 #         materialized with `git archive`; see qa/README.md)
+#   STRELKA_QA_PY310_BIN  /workspace/.opencode/state/uv/python/cpython-3.10*/bin/python3
+#   STRELKA_QA_PY311_BIN  /workspace/.opencode/state/uv/python/cpython-3.11*/bin/python3
+#   STRELKA_QA_PY312_BIN  /workspace/.opencode/state/uv/python/cpython-3.12*/bin/python3
+#        (python3 compatibility matrix; uv-managed interpreters, see
+#         qa/README.md)
 #
 # Procedure, triggers and norm mapping: qa/README.md.
 
@@ -64,6 +73,8 @@ qa/validate.sh [--full] [--cp3] [--install DIR] [--keep-work]
 
   (no option)  fast: compileall + unittest + baseline checksums
                + caller golden tests (demos vs expectedResults)
+               + python3 compatibility matrix (pyflow threading smoke +
+                 demos under pinned 3.10/3.11/3.12, N/A if absent)
   --full       + Py2/Py3 parity CP1/CP2/CP2b (N/A consigné if tool chains
                absent)
   --cp3        + C++ scoring runs with the parity model JSONs + semantic
@@ -96,6 +107,9 @@ PY2_LIB=${STRELKA_QA_PY2_LIB:-/workspace/.opencode/state/ref-py27/lib}
 PY2_PKGS=${STRELKA_QA_PY2_PKGS:-/workspace/.opencode/state/ref-py27-packages}
 PY3_PKGS=${STRELKA_QA_PY3_PKGS:-/workspace/.opencode/state/training-py3-packages}
 PY2_TREE_SHA=${STRELKA_QA_PY2_TREE_SHA:-2cf5f0fcdad70550bee660243ab31173509ef98c}
+PY310_BIN=${STRELKA_QA_PY310_BIN:-$(ls /workspace/.opencode/state/uv/python/cpython-3.10*/bin/python3 2>/dev/null | head -1)}
+PY311_BIN=${STRELKA_QA_PY311_BIN:-$(ls /workspace/.opencode/state/uv/python/cpython-3.11*/bin/python3 2>/dev/null | head -1)}
+PY312_BIN=${STRELKA_QA_PY312_BIN:-$(ls /workspace/.opencode/state/uv/python/cpython-3.12*/bin/python3 2>/dev/null | head -1)}
 
 TS=$(date -u +%Y%m%dT%H%M%SZ)
 GITSHA=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo nogit)
